@@ -1,27 +1,35 @@
 use crate::{fprati, fpback, fpbspl, fpdisc, fpgivs, fpknot, fprota, fpchec};
 
+// fpcurf(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,
+//      * n,t,c,fp,fpint,z,a,b,g,q,nrdata,ier)
+
 pub fn fp_curf(
     iopt: i8,
-    m: usize,
     x: Vec<f64>,
     y: Vec<f64>,
     w: Vec<f64>,
+    m: usize,
     xb: f64,
     xe: f64,
     k: u8,
     s: f64,
     nest: usize,
+    tol: f64,
+    maxit: usize,
+    k1: usize,
+    k2: usize,
     n: usize,
     t: &mut Vec<f64>,
     mut c: Vec<f64>,
     fp: f64,
-    wrk: Vec<f64>,
-    lwrk: usize,
-    iwrk: Vec<usize>,
+    mut fpint: f64,
+    z: f64,
+    a: f64,
+    b: f64,
+    g: f64,
+    q: f64,
+    mut nrdata: Vec<usize>,
     ier: i8,
-    nmax: usize,
-    nrdata: &mut Vec<usize>,
-    mut fpint: Vec<f64>,
 ) -> f64 {
     let nmin: usize = 2 * k as usize;
 

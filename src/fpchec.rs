@@ -14,7 +14,7 @@
 ///             t[j] < y[j] < t[j+k+1], j=0,1,2,...,n-k-1
 ///
 ///  The original subroutine in FITPACK by Paul Dierckx is named fpchec
-fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: u8, m: usize, n: usize) -> u8 {
+pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: u8, m: usize, n: usize) -> u8 {
     let k1: usize = k as usize + 1;
     let nk1: usize = n - k1;
     // check condition no 1

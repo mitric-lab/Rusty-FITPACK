@@ -1,3 +1,4 @@
+use crate::fpchec;
 use crate::fpcurf;
 
 pub fn curfit(
@@ -36,7 +37,7 @@ pub fn curfit(
     //assert!(x.is_sorted(), "x has to be sorted in ascending order");
     if iopt >= 0 {
         assert!(s >= 0.0, "smoothing factor cannot be negative");
-        if s == 0 && nest <= m + k1 {
+        if s == 0.0 && nest <= m + k1 {
             panic!()
         }
     }
@@ -54,7 +55,7 @@ pub fn curfit(
     }
 
     // verify the number and position of knots
-    let mut ier: u8 = check_knots(&x, &t, k, m, n);
+    let mut ier: u8 = fpchec::check_knots(&x, &t, k, m, n);
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
     // we partition the working space and determine the spline approximation
@@ -65,5 +66,9 @@ pub fn curfit(
     let ig: usize = ib + nest * k2;
     let iq: usize = ig + nest * k2;
 
+    fpcurf::fpcurf(
+        iopt, x, y, w, m, xb, xe, k, s, nest, tol, maxit, k1, k2, n, t, c, fp, wrk[ifp-1], wrk[iz-1],
+        wrk[ia-1], wrk[ib-1], wrk[ig-1], wrk[iq-1], iwrk, ier,
+    );
     return Some(1.0);
 }
