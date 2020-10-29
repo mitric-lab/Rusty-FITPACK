@@ -1,4 +1,4 @@
-use crate::{fprati, fpback, fpbspl, fpdisc, fpgivs, fpknot, fprota, fpchec};
+use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fpknot, fprati, fprota};
 
 // fpcurf(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,
 //      * n,t,c,fp,fpint,z,a,b,g,q,nrdata,ier)

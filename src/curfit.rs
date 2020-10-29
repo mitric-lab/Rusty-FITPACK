@@ -67,8 +67,32 @@ pub fn curfit(
     let iq: usize = ig + nest * k2;
 
     fpcurf::fpcurf(
-        iopt, x, y, w, m, xb, xe, k, s, nest, tol, maxit, k1, k2, n, t, c, fp, wrk[ifp-1], wrk[iz-1],
-        wrk[ia-1], wrk[ib-1], wrk[ig-1], wrk[iq-1], iwrk, ier,
+        iopt,
+        x,
+        y,
+        w,
+        m,
+        xb,
+        xe,
+        k,
+        s,
+        nest,
+        tol,
+        maxit,
+        k1,
+        k2,
+        n,
+        t,
+        c,
+        fp,
+        wrk[ifp - 1],
+        wrk[iz - 1],
+        wrk[ia - 1],
+        wrk[ib - 1],
+        wrk[ig - 1],
+        wrk[iq - 1],
+        iwrk,
+        ier,
     );
     return Some(1.0);
 }
