@@ -18,7 +18,7 @@ pub fn splrep(
     xb: Option<f64>,
     xe: Option<f64>,
     k: Option<usize>,
-    task: Option<i32>,
+    task: Option<i8>,
     s: Option<f64>,
     t: Option<Vec<f64>>,
     full_output: Option<bool>,
@@ -39,7 +39,7 @@ pub fn splrep(
     };
     let w: Vec<f64> = w.unwrap_or(vec![1.0; m]);
     let k: usize = k.unwrap_or(3);
-    let mut task: i32 = task.unwrap_or(0);
+    let mut task: i8 = task.unwrap_or(0);
     let full_output: bool = full_output.unwrap_or(false);
     let per: bool = per.unwrap_or(false);
     let quiet: bool = quiet.unwrap_or(true);
@@ -71,12 +71,13 @@ pub fn splrep(
     } else if task == 0 {
         (vec![0.0; nest], max(m + k + 1, 2 * k + 3))
     };
-    let wrk: Vec<f64> = vec![0.0; (m*(k + 1) + nest*(7 + 3*k)];
+    let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
     let iwrk: Vec<i32> = vec![0; nest];
 
-    let (n, c, fp, ier) = curfit::curfit(task, x, y, w, t ,wrk, iwrk,); // curfit call here
+    let (n, c, fp, ier) = curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t, wrk, iwrk);
+    // curfit call here
 
-    let tck = (t[..n], c[..n], k);
+    //let tck = (t[..n], c[..n], k);
 }
 
 #[cfg(test)]

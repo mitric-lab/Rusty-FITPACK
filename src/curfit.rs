@@ -3,28 +3,25 @@ use crate::fpcurf;
 
 pub fn curfit(
     iopt: i8,
-    m: usize,
     x: Vec<f64>,
     y: Vec<f64>,
     w: Vec<f64>,
     xb: f64,
     xe: f64,
-    k: u8,
+    k: usize,
     s: f64,
     nest: usize,
-    n: usize,
     t: Vec<f64>,
-    c: Vec<f64>,
-    fp: f64,
     wrk: Vec<f64>,
-    lwrk: usize,
-    iwrk: Vec<usize>,
-    ier: i8,
+    iwrk: Vec<i32>,
 ) -> Option<f64> {
+    let m: usize = x.len();
+    let n: usize = nest.clone();
+    let lwrk: usize = wrk.len();
     let maxit: usize = 20;
     assert!(k >= 0 && k <= 5, "the degree k must be within 1 and 5");
-    let k1: u8 = k + 1;
-    let k2: u8 = k1 + 1;
+    let k1: usize = k + 1;
+    let k2: usize = k1 + 1;
     assert!(iopt >= -1 && iopt <= 1, "iopt must be within -1 and 1");
     let nmin: usize = 2 * k1 as usize;
     assert!(
