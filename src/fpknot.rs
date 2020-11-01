@@ -20,11 +20,11 @@ fn fpknot(
 ) -> f64 {
     let k: usize = (n - nrint - 1) / 2;
     let mut t: Vec<f64> = t;
-    let mut number:usize = 0;
+    let mut number: usize = 0;
     let mut fpint: Vec<f64> = fpint;
     let mut nrdata: Vec<usize> = nrdata;
     let mut nrint: usize = nrint;
-    let mut n: usize= n;
+    let mut n: usize = n;
     //  search for knot interval t(number+k) <= x <= t(number+k+1) where
     //  fpint(number) is maximal on the condition that nrdata(number)
     //  not equals zero.
@@ -61,7 +61,7 @@ fn fpknot(
     nrdata[next - 1] = maxpt - ihalf;
     let am = maxpt;
     let an = nrdata[number - 1];
-    fpint[number] = fpmax * an as f64/ am as f64;
+    fpint[number] = fpmax * an as f64 / am as f64;
     let an = nrdata[next - 1];
     fpint[next - 1] = fpmax * an as f64 / am as f64;
     let jk = next + k;

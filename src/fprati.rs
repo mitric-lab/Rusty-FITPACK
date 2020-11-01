@@ -2,14 +2,7 @@
 /// gives the value of p such that the rational interpolating function
 /// of the form r(p) = (u*p+v)/(p+w) equals zero at p.
 /// The original subroutine in FITPACK by Paul Dierckx is named fprati
-pub fn fprati(
-    p1: f64,
-    f1: f64,
-    p2: f64,
-    f2: f64,
-    p3: f64,
-    f3: f64,
-) -> (f64, f64, f64, f64, f64) {
+pub fn fprati(p1: f64, f1: f64, p2: f64, f2: f64, p3: f64, f3: f64) -> (f64, f64, f64, f64, f64) {
     let mut p1: f64 = p1;
     let mut f1: f64 = f1;
     let mut p2: f64 = p2;

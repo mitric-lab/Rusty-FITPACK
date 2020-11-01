@@ -25,7 +25,7 @@ pub fn splrep(
     per: Option<bool>,
     quiet: Option<bool>,
     //) -> (Vec<f64>, Vec<f64>, usize) {
-) -> () {
+) -> (Vec<f64>, Vec<f64>, usize) {
     let m: usize = x.len();
     let s: f64 = match s {
         None => {
@@ -52,14 +52,14 @@ pub fn splrep(
     );
     assert!(m > k, "m > must hold");
     let xb: f64 = xb.unwrap_or(x[0]);
-    let xe: f64 = xe.unwrap_or(x[x.len()-1]);
+    let xe: f64 = xe.unwrap_or(x[x.len() - 1]);
     assert!(0 <= task && task <= 1, "task must be 0, or 1");
     if t.is_some() {
         task = -1;
     }
     let (t, nest): (Vec<f64>, usize) = if task == -1 {
-        assert(t.is_some(), "knots must be given for task = -1");
-        let numknots: usize = t.unwrap().len();
+        assert!(t.is_some(), "knots must be given for task = -1");
+        let numknots: usize = t.clone().unwrap().len();
         let nest: usize = numknots + 2 * k + 2;
         let mut new_t: Vec<f64> = vec![0.0; numknots];
         for (i, value) in t.unwrap().iter().enumerate() {
@@ -71,20 +71,34 @@ pub fn splrep(
     } else if task == 0 {
         let nest: usize = max(m + k + 1, 2 * k + 3);
         (vec![0.0; nest], nest)
+    } else {
+        (vec![0.0; 1], 0)
     };
     let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
     let iwrk: Vec<i32> = vec![0; nest];
 
-    let (n, c, fp, ier) = curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t, wrk, iwrk);
+    let (n, c, fp, ier): (usize, Vec<f64>, f64, i8) =
+        curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t.clone(), wrk, iwrk);
     // curfit call here
 
-    //let tck = (t[..n], c[..n], k);
+    let tck = (t[..n].to_vec(), c[..n].to_vec(), k);
+    return tck;
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::splrep;
+
     #[test]
     fn it_works() {
-        assert_eq!(2 + 2, 4);
+        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0];
+        let (a, b, c) = splrep(
+            x, y, None, None, None, None, None, None, None, None, None, None,
+        );
+        println!("{:?}", a);
+        println!("{:?}", b);
+        println!("{}", c);
+        assert_eq!(2 + 2, 5);
     }
 }

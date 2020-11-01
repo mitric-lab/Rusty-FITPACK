@@ -14,7 +14,7 @@ pub fn curfit(
     t: Vec<f64>,
     wrk: Vec<f64>,
     iwrk: Vec<i32>,
-) -> Option<f64> {
+) -> (usize, Vec<f64>, f64, i8) {
     let m: usize = x.len();
     let n: usize = nest.clone();
     let lwrk: usize = wrk.len();
@@ -33,8 +33,8 @@ pub fn curfit(
     //assert!(x.is_sorted(), "x has to be sorted in ascending order");
     if iopt >= 0 {
         assert!(s >= 0.0, "smoothing factor cannot be negative");
-        if s == 0.0 && nest <= m + k1 {
-            panic!()
+        if s == 0.0 && nest <= m + k {
+            panic!("s: {}, nest: {}, m+k+1: {}, nest cannot be smaller than m+k+1",s,nest,m+k1)
         }
     }
     assert!(
@@ -51,7 +51,7 @@ pub fn curfit(
     }
 
     // verify the number and position of knots
-    let mut ier: u8 = fpchec::check_knots(&x, &t, k, m, n);
+    let mut ier: u8 = 0;//fpchec::check_knots(&x, &t, k, m, n);
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
     // we partition the working space and determine the spline approximation
@@ -62,21 +62,6 @@ pub fn curfit(
     // let ig: usize = ib + nest * k2;
     // let iq: usize = ig + nest * k2;
 
-    fpcurf::fpcurf(
-        iopt,
-        x,
-        y,
-        w,
-        m,
-        xb,
-        xe,
-        k,
-        s,
-        nest,
-        k1,
-        k2,
-        n,
-        t,
-    );
-    return Some(1.0);
+    let (n, c, fp, ier) = fpcurf::fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
+    return (n, c, fp, ier);
 }

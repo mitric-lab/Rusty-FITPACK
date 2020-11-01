@@ -16,7 +16,7 @@ pub fn fpcurf(
     k2: usize,
     n: usize,
     t: Vec<f64>,
-) -> f64 {
+) -> (usize, Vec<f64>, f64, i8) {
     let nmin: usize = 2 * k as usize;
 
     let tol: f64 = 1e-3;
@@ -30,11 +30,12 @@ pub fn fpcurf(
     let mut c: Vec<f64> = vec![0.0; nest];
     let mut z: Vec<f64> = vec![0.0; nest];
     let nmax: usize = n + k1;
-    let h: Vec<f64> = vec![0.0; 7];
+    let mut h: Vec<f64> = vec![0.0; 7];
     let mut fpms: f64 = 0.0;
     let nk1: usize = n - k1;
     let mut yi: f64;
     let mut i2: usize = 1;
+    let mut fp: f64 = 0.0;
 
     let mut a: Array2<f64> = Array2::zeros((nest, k1));
     let mut b: Array2<f64> = Array2::zeros((nest, k2));
@@ -53,17 +54,17 @@ pub fn fpcurf(
         } else if fp0 <= s {
             nrdata[0] = m - 2;
         }
-    } else if s == 0.0 && iopt >= 0{
-        n = nmax;
-        assert!(
-            nmax <= nest,
+    } else if s == 0.0 && iopt >= 0 {
+        //n = nmax;
+        println!(
+            //nmax <= nest,
             "the storage space exceeds available space, try to increase nest"
         );
         // find the position of the interior knots in case of interpolation
         let mk1 = m - k1;
         if mk1 != 0 {
             let mut i: usize = k1;
-            let mut j: usize = k/2 + 1;
+            let mut j: usize = k / 2 + 1;
             if k % 2 == 0 {
                 for _l in 0..mk1 {
                     t[i] = (x[j] + x[j - 1]) * 0.5;
@@ -99,7 +100,6 @@ pub fn fpcurf(
         //  sinf(x). the observation matrix a is built up row by row and
         //  reduced to upper triangular form by givens transformations.
         //  at the same time fp=f(p=inf) is computed.
-        let mut fp: f64 = 0.0;
         // initialize the observation matrix a
         for i in 1..(nk1 + 1) {
             z[i - 1] = 0.0;
@@ -119,34 +119,35 @@ pub fn fpcurf(
                 l = l + 1;
             }
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
-            let mut h: Vec<f64> = fpbspl::fbspl(xi, &t, k, n, l, h);
+            let mut h: Vec<f64> = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
             for i in 1..(k1 + 1) {
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
             }
-            let mut j: usize = l - k1;
+            let mut j: i32 = l as i32 - k1 as i32;
             for i in 1..(k1 + 1) {
                 j = j + 1;
                 let piv: f64 = h[i - 1];
                 if piv != 0.0 {
                     // calculate the parameters of the givens transformation
                     // CALL FPGIVS(piv,A(j,1),cos,sin)
-                    let (ww, cos, sin): (f64, f64, f64) = fpgivs::fpgivs(piv, a[[j-1, 0]]);
-                    a[[j-1, 0]] = ww;
+                    let (ww, cos, sin): (f64, f64, f64) = fpgivs::fpgivs(piv, a[[j as usize - 1, 0]]);
+                    a[[j as usize - 1, 0]] = ww;
                     // transformations to right hand side.
                     // CALL FPROTA(cos,sin,yi,Z(j))
-                    let (a, b): (f64, f64) = fprota::fprota(cos, sin, yi, z[j-1]);
-                    yi = a;
-                    z[j-1] = b;
+                    let (tmp_a, tmp_b): (f64, f64) = fprota::fprota(cos, sin, yi, z[j as usize - 1]);
+                    yi = tmp_a;
+                    z[j as usize - 1] = tmp_b;
                     if i != k1 {
                         let mut i3: usize = i + 1;
                         for i1 in i3..(k1 + 1) {
                             i2 = i2 + 1;
                             // transformations to left hand side
                             // call fprota(cos,sin,h(i1),a(j,i2))
-                            let (a, b): (f64, f64) = fprota::fprota(cos, sin, h[i1-1], a[[j-1, i2-1]]);
-                            h[i1-1] = a;
-                            a[[j-1, i2-1]] = b;
+                            let (tmp_a, tmp_b): (f64, f64) =
+                                fprota::fprota(cos, sin, h[i1 - 1], a[[j as usize - 1, i2 - 1]]);
+                            h[i1 - 1] = tmp_a;
+                            a[[j as usize - 1, i2 - 1]] = tmp_b;
                         }
                     }
                 }
@@ -242,7 +243,7 @@ pub fn fpcurf(
         p = p + a[[i - 1, 0]]
     }
     let rn = nk1;
-    p = rn as f64/ p;
+    p = rn as f64 / p;
     let ich1: usize = 0;
     let ich2: usize = 0;
     let n8: usize = n - nmin;
@@ -253,7 +254,7 @@ pub fn fpcurf(
         let pinv = 1.0 / p;
         for i in 1..(nk1 + 1) {
             c[i - 1] = z[i - 1];
-            g[[i - 1, k2]] = 0.0;
+            g[[i - 1, k2 - 1]] = 0.0;
             for j in 1..(k1 + 1) {
                 g[[i - 1, j - 1]] = a[[i - 1, j - 1]];
             }
@@ -287,7 +288,6 @@ pub fn fpcurf(
             // backward substitution to obtain the b-spline coefficients
             // call fpback(g,c,nk1,k2,c,nest)
             // computation of f[p]
-            let mut fp: f64 = 0.0;
             let mut l = k2;
             for it in 1..(m + 1) {
                 if x[it - 1] >= t[l - 1] && l <= nk1 {
@@ -306,7 +306,8 @@ pub fn fpcurf(
             // test whether the maximal number of iterations is reached
 
             // carry out one more step of the iteration process
-
+            let p2 = p;
+            let f2: f64 = fpms;
             // our initial choice of p is too large
 
             // our initial choice of p is too small
@@ -315,9 +316,10 @@ pub fn fpcurf(
             // expected
 
             // find the new value for p
-            let (p, p1, f1, p3, f3): (f64, f64, f64, f64, f64) = fprati::fprati(p1, f1, p2, f2, p3, f3);
+            let (p, p1, f1, p3, f3): (f64, f64, f64, f64, f64) =
+                fprati::fprati(p1, f1, p2, f2, p3, f3);
             // error codes and messages
         }
     }
-    return 1.0;
+    return (n, c, fp, ier);
 }

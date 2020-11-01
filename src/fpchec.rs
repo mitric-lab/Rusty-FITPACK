@@ -21,32 +21,59 @@ pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: usize, m: usize, n: usi
     let nk2: usize = nk1 + 1;
     // check condition no 1
     if nk1 < k1 || nk1 > m {
-        return 10;
+        panic!(
+            "condition 1 is not satisfied. nk1: {}, k1: {}, m: {}",
+            nk1, k1, m
+        )
     }
     // check condition no 2
     let mut j: usize = n;
     for i in 1..(k + 1) {
-        if t[(i - 1) as usize] > t[i as usize] {
-            return 10;
+        if t[(i - 1) as usize] > t[i as usize]{
+            println!(
+                "condition 2 is not satisfied. t[i-1]: {}, t[i]: {}",
+                t[i - 1],
+                t[i]
+            );
         }
         if t[j - 1] < t[j - 2] {
-            return 10;
+            println!(
+                "condition 2 is not satisfied. t[j-1]: {}, t[j-2]: {}",
+                t[j - 1],
+                t[j - 2]
+            );
         }
         j = j - 1;
     }
     // check condition no 3
     for i in k1..(nk1 + 1) {
         if t[i - 1] <= t[i - 2] {
-            return 10;
+            println!(
+                "condition 3 is not satisfied. t[i-1]: {}, t[i-2]: {}",
+                t[i - 1],
+                t[i - 2]
+            );
         }
     }
     // check condition no 4
     if x[0] < t[k1 - 1] || x[m - 1] > t[nk2 - 1] {
-        return 10;
+        panic!(
+            "condition 4 is not satisfied. x[0]: {}, t[k1-1]: {}, x[m-1]: {}, t[nk2-1]: {}",
+            x[0],
+            t[k1 - 1],
+            x[m - 1],
+            t[nk2 - 1]
+        );
     }
     //check condition no 5
     if x[0] > t[k2 - 1] || x[m - 1] <= t[nk1 - 1] {
-        return 10;
+        panic!(
+            "condition 5 is not satisfied. x[0]: {}, t[k2-1]: {}, x[m-1]: {}, t[nk1-1]: {}",
+            x[0],
+            t[k2 - 1],
+            x[m - 1],
+            t[nk1 - 1]
+        );
     }
     let mut i: usize = 1;
     let mut l: usize = k2;
@@ -58,16 +85,20 @@ pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: usize, m: usize, n: usi
         l = l + 1;
         i = i + 1;
         if i > m {
-            return 10;
+            panic!("check failed after five conditions. i: {}, m: {}", i, m);
         }
         while x[i - 1] <= t[j - 1] {
             i = i + 1;
             if i > m {
-                return 10;
+                panic!("check failed after five conditions. i: {}, m: {}", i, m);
             }
         }
         if x[i - 1] >= t[l - 1] {
-            return 10;
+            panic!(
+                "check failed after five conditions. x[i - 1]: {}, t[l - 1]: {}",
+                x[i - 1],
+                t[l - 1]
+            );
         }
     }
     return 0;
