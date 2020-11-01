@@ -1,3 +1,5 @@
+use ndarray::ArrayView2;
+
 ///  Function fpback calculates the solution of the system of
 ///  equations $a * c = z$ with a a n x n upper triangular matrix
 ///  of bandwidth k.

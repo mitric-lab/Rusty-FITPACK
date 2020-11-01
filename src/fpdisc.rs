@@ -1,3 +1,5 @@
+use ndarray::Array2;
+
 ///  The function fpdisc calculates the discontinuity jumps of the kth
 ///  derivative of the b-splines of degree k at the knots t[k+2]..t[n-k-1]
 ///  The original subroutine in FITPACK by Paul Dierckx is named fpdisc

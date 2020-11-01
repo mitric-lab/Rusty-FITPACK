@@ -18,7 +18,6 @@ pub fn curfit(
     let m: usize = x.len();
     let n: usize = nest.clone();
     let lwrk: usize = wrk.len();
-    let maxit: usize = 20;
     assert!(k >= 0 && k <= 5, "the degree k must be within 1 and 5");
     let k1: usize = k + 1;
     let k2: usize = k1 + 1;
@@ -56,12 +55,12 @@ pub fn curfit(
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
     // we partition the working space and determine the spline approximation
-    let ifp: usize = 0;
-    let iz: usize = ifp + nest;
-    let ia: usize = iz + nest;
-    let ib: usize = ia + nest * k1;
-    let ig: usize = ib + nest * k2;
-    let iq: usize = ig + nest * k2;
+    // let ifp: usize = 0;
+    // let iz: usize = ifp + nest;
+    // let ia: usize = iz + nest;
+    // let ib: usize = ia + nest * k1;
+    // let ig: usize = ib + nest * k2;
+    // let iq: usize = ig + nest * k2;
 
     fpcurf::fpcurf(
         iopt,
@@ -74,22 +73,10 @@ pub fn curfit(
         k,
         s,
         nest,
-        tol,
-        maxit,
         k1,
         k2,
         n,
         t,
-        c,
-        fp,
-        wrk[ifp - 1],
-        wrk[iz - 1],
-        wrk[ia - 1],
-        wrk[ib - 1],
-        wrk[ig - 1],
-        wrk[iq - 1],
-        iwrk,
-        ier,
     );
     return Some(1.0);
 }

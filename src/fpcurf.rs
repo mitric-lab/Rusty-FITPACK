@@ -1,9 +1,7 @@
 use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fpknot, fprati, fprota};
+use ndarray::Array2;
 
-// fpcurf(iopt,x,y,w,m,xb,xe,k,s,nest,tol,maxit,k1,k2,
-//      * n,t,c,fp,fpint,z,a,b,g,q,nrdata,ier)
-
-pub fn fp_curf(
+pub fn fpcurf(
     iopt: i8,
     x: Vec<f64>,
     y: Vec<f64>,
@@ -11,43 +9,34 @@ pub fn fp_curf(
     m: usize,
     xb: f64,
     xe: f64,
-    k: u8,
+    k: usize,
     s: f64,
     nest: usize,
-    tol: f64,
-    maxit: usize,
     k1: usize,
     k2: usize,
     n: usize,
-    t: &mut Vec<f64>,
-    mut c: Vec<f64>,
-    fp: f64,
-    mut fpint: f64,
-    z: f64,
-    a: f64,
-    b: f64,
-    g: f64,
-    q: f64,
-    mut nrdata: Vec<usize>,
-    ier: i8,
+    t: Vec<f64>,
 ) -> f64 {
     let nmin: usize = 2 * k as usize;
 
     let tol: f64 = 1e-3;
     let acc: f64 = tol * s;
-    let k1 = k as usize + 1;
-    let k2 = k as usize + 2;
     let mut n: usize = n;
     let mut ier: i8 = 0;
+    let mut t: Vec<f64> = t;
+    let maxit: usize = 20;
+    let mut nrdata: Vec<usize> = vec![0; nest];
+    let mut fpint: Vec<f64> = vec![0.0; nest];
+    let mut c: Vec<f64> = vec![0.0; nest];
 
-    let mut a: Array2<f64> = Array::zeros((nest, k1).f());
-    let mut b: Array2<f64> = Array::zeros((nest, k2).f());
-    let mut g: Array2<f64> = Array::zeros((nest, k2).f());
-    let mut q: Array2<f64> = Array::zeros((n, k1).f());
+    let mut a: Array2<f64> = Array2::zeros((nest, k1));
+    let mut b: Array2<f64> = Array2::zeros((nest, k2));
+    let mut g: Array2<f64> = Array2::zeros((nest, k2));
+    let mut q: Array2<f64> = Array2::zeros((m, k1));
 
-    let fpold: f64;
-    let fp0: f64;
-    let nplus: usize;
+    let mut fpold: f64 = 0.0;
+    let mut fp0: f64 = 0.0;
+    let mut nplus: usize = 0;
     // if iopt < 0 skip this and go to main loop
     if s > 0.0 {
         if iopt != 0 || n != nmin {
@@ -55,8 +44,6 @@ pub fn fp_curf(
             fpold = fpint[n - 2];
             nplus = nrdata[n - 1];
         } else if fp0 <= s {
-            fpold = 0.0;
-            nplus = 0;
             nrdata[0] = m - 2;
         }
     } else if s == 0.0 {
@@ -71,13 +58,13 @@ pub fn fp_curf(
             let mut i: usize = k1;
             let mut j: usize = k3 + 1;
             if k % 2 == 0 {
-                for l in 0..mk1 {
+                for _l in 0..mk1 {
                     t[i] = (x[j] + x[j - 1]) * 0.5;
                     i = i + 1;
                     j = j + 1;
                 }
             } else {
-                for l in 0..mk1 - 1 {
+                for _l in 0..mk1 - 1 {
                     t[i] = x[j];
                     i = i + 1;
                     j = j + 1;
@@ -87,7 +74,7 @@ pub fn fp_curf(
     }
     // main loop for the different sets of knots. m is a save upper bound
     // for the number of trials.
-    for iter in 1..(m + 1) {
+    for _iter in 1..(m + 1) {
         if n == nmin {
             ier = -2
         };
@@ -143,7 +130,7 @@ pub fn fp_curf(
                     if i != k1 {
                         let mut i2: usize = 1;
                         let mut i3: usize = i + 1;
-                        for i1 in i3..(k1 + 1) {
+                        for _i1 in i3..(k1 + 1) {
                             i2 = i2 + 1;
                             // transformations to left hand side
                             // call fprota(cos,sin,h(i1),a(j,i2))
@@ -216,7 +203,7 @@ pub fn fp_curf(
                     new = 0;
                 }
                 fpint[nrint - 1] = fpart;
-                for l in 1..(nplus + 1) {
+                for _l in 1..(nplus + 1) {
                     //  add a new knot.
                     // call fpknot(x,m,t,n,fpint,nrdata,nrint,nest,1)
                     //  if n=nmax we locate the knots as for interpolation.

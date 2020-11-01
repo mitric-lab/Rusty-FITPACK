@@ -14,7 +14,7 @@ fn fpknot(
     t: Vec<f64>,
     mut n: usize,
     fpint: Vec<f64>,
-    nrdata: Vec<f64>,
+    nrdata: Vec<usize>,
     mut nrint: usize,
     istart: usize,
 ) -> f64 {
@@ -24,10 +24,10 @@ fn fpknot(
     //  not equals zero.
     let mut fpmax: f64 = 0.0;
     let mut jbegin: usize = istart;
-    let mut maxpt: f64 = 0.0;
+    let mut maxpt: usize = 0;
     let mut maxbeg: usize = 0;
     for j in 1..(nrint + 1) {
-        let jpoint = nrdata[j - 1];
+        let jpoint: usize = nrdata[j - 1];
         if fpmax < fpint[j - 1] && jpoint != 0 {
             fpmax = fpint[j - 1];
             number = j;
