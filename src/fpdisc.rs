@@ -6,6 +6,7 @@ use ndarray::Array2;
 fn fpdisc(t: Vec<f64>, k2: usize, n: usize, b: Array2<f64>) -> f64 {
     let mut b: Array2<f64> = b;
 
+    let mut h: Vec<f64> = vec![0.0; 12];
     let k1: usize = k2 - 1;
     let k: usize = k1 - 1;
     let nk1: usize = n - k1;

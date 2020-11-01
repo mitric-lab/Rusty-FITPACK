@@ -28,6 +28,13 @@ pub fn fpcurf(
     let mut nrdata: Vec<usize> = vec![0; nest];
     let mut fpint: Vec<f64> = vec![0.0; nest];
     let mut c: Vec<f64> = vec![0.0; nest];
+    let mut z: Vec<f64> = vec![0.0; nest];
+    let nmax: usize = n + k1;
+    let h: Vec<f64> = vec![0.0; 7];
+    let mut fpms: f64 = 0.0;
+    let nk1: usize = n - k1;
+    let mut yi: f64;
+    let mut i2: usize = 1;
 
     let mut a: Array2<f64> = Array2::zeros((nest, k1));
     let mut b: Array2<f64> = Array2::zeros((nest, k2));
@@ -37,8 +44,8 @@ pub fn fpcurf(
     let mut fpold: f64 = 0.0;
     let mut fp0: f64 = 0.0;
     let mut nplus: usize = 0;
-    // if iopt < 0 skip this and go to main loop
-    if s > 0.0 {
+
+    if s > 0.0 && iopt >= 0 {
         if iopt != 0 || n != nmin {
             fp0 = fpint[n - 1];
             fpold = fpint[n - 2];
@@ -46,7 +53,7 @@ pub fn fpcurf(
         } else if fp0 <= s {
             nrdata[0] = m - 2;
         }
-    } else if s == 0.0 {
+    } else if s == 0.0 && iopt >= 0{
         n = nmax;
         assert!(
             nmax <= nest,
@@ -56,7 +63,7 @@ pub fn fpcurf(
         let mk1 = m - k1;
         if mk1 != 0 {
             let mut i: usize = k1;
-            let mut j: usize = k3 + 1;
+            let mut j: usize = k/2 + 1;
             if k % 2 == 0 {
                 for _l in 0..mk1 {
                     t[i] = (x[j] + x[j - 1]) * 0.5;
@@ -76,13 +83,12 @@ pub fn fpcurf(
     // for the number of trials.
     for _iter in 1..(m + 1) {
         if n == nmin {
-            ier = -2
+            ier = -2;
         };
         // find nrint, tne number of knot intervals.
         let nrint: usize = n - nmin + 1;
         // find the position of the additional knots which are needed for
         // the b-spline representation of s[x].
-        let nk1: usize = n - k1;
         let mut i: usize = n;
         for j in 1..(k1 + 1) {
             t[j - 1] = xb;
@@ -107,33 +113,40 @@ pub fn fpcurf(
             // fetch the current data point x[it], y[it]
             let xi: f64 = x[it - 1];
             let wi: f64 = w[it - 1];
-            let yi: f64 = y[it - 1] * wi;
+            yi = y[it - 1] * wi;
             // search for knot interval t[l] <= xi < t[l+1].
             while xi >= t[l + 1] && l != nk1 {
                 l = l + 1;
             }
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
-            let mut h: Vec<f64> = fbspl(xi, &t, k, n, l, h);
+            let mut h: Vec<f64> = fpbspl::fbspl(xi, &t, k, n, l, h);
             for i in 1..(k1 + 1) {
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
             }
-            j = l - k1;
+            let mut j: usize = l - k1;
             for i in 1..(k1 + 1) {
                 j = j + 1;
-                piv = h[i - 1];
+                let piv: f64 = h[i - 1];
                 if piv != 0.0 {
                     // calculate the parameters of the givens transformation
                     // CALL FPGIVS(piv,A(j,1),cos,sin)
+                    let (ww, cos, sin): (f64, f64, f64) = fpgivs::fpgivs(piv, a[[j-1, 0]]);
+                    a[[j-1, 0]] = ww;
                     // transformations to right hand side.
                     // CALL FPROTA(cos,sin,yi,Z(j))
+                    let (a, b): (f64, f64) = fprota::fprota(cos, sin, yi, z[j-1]);
+                    yi = a;
+                    z[j-1] = b;
                     if i != k1 {
-                        let mut i2: usize = 1;
                         let mut i3: usize = i + 1;
-                        for _i1 in i3..(k1 + 1) {
+                        for i1 in i3..(k1 + 1) {
                             i2 = i2 + 1;
                             // transformations to left hand side
                             // call fprota(cos,sin,h(i1),a(j,i2))
+                            let (a, b): (f64, f64) = fprota::fprota(cos, sin, h[i1-1], a[[j-1, i2-1]]);
+                            h[i1-1] = a;
+                            a[[j-1, i2-1]] = b;
                         }
                     }
                 }
@@ -150,14 +163,16 @@ pub fn fpcurf(
         nrdata[n - 1] = nplus;
         //  backward substitution to obtain the b-spline coefficients.
         // call fpback(a,z,nk1,k1,c,nest)
+        let mut c: Vec<f64> = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
         //  test whether the approximation sinf(x) is an acceptable solution .
         assert!(
             iopt >= 0,
             "the approximation sinf[x] is not an acceptable solution"
         );
-        let fpms: f64 = fp - s;
+        fpms = fp - s;
         assert!(fpms.abs() >= acc);
         // if f(p=inf) < s accept the choice of knots
+        let mut npl1: f64 = 0.0;
         if fpms >= 0.0 {
             //  if n = nmax, sinf(x) is an interpolating spline.
             // if(n.eq.nmax) go to 430
@@ -168,8 +183,8 @@ pub fn fpcurf(
                 nplus = 1;
                 ier = 0;
             } else {
-                npl1 = nplus * 2;
-                rn = nplus;
+                npl1 = nplus as f64 * 2;
+                let rn: f64 = nplus as f64;
                 if fpold - fp > acc {
                     npl1 = rn * fpms / (fpold - fp);
                     //nplus = [nplus * 2, [npl1 as usize, nplus/2, 1 as usize].max()].min();
@@ -188,7 +203,7 @@ pub fn fpcurf(
                     l = l + 1;
                 }
                 let mut term: f64 = 0.0;
-                l0 = l - k2;
+                let mut l0 = l - k2;
                 for j in 1..(k1 + 1) {
                     l0 = l0 + 1;
                     term = term + c[l0 - 1] * q[[it - 1, j - 1]];
@@ -196,7 +211,7 @@ pub fn fpcurf(
                 term = (w[it - 1] * (term - y[it - 1])).powi(2);
                 fpart = fpart + term;
                 if new != 0 {
-                    store = term * 0.50;
+                    let store = term * 0.50;
                     fpint[i - 1] = fpart - store;
                     i = i + 1;
                     fpart = store;
@@ -222,12 +237,12 @@ pub fn fpcurf(
     let f1: f64 = fp0 - s;
     let p3: f64 = -1.0;
     let f3: f64 = fpms;
-    p = 0;
+    let mut p: f64 = 0.0;
     for i in 1..(nk1 + 1) {
         p = p + a[[i - 1, 0]]
     }
     let rn = nk1;
-    p = rn / p;
+    p = rn as f64/ p;
     let ich1: usize = 0;
     let ich2: usize = 0;
     let n8: usize = n - nmin;
@@ -235,7 +250,7 @@ pub fn fpcurf(
     for iter in 1..(maxit + 1) {
         //  the rows of matrix b with weight 1/p are rotated into the
         //  triangularised observation matrix a which is stored in g.
-        let pinv = one / p;
+        let pinv = 1.0 / p;
         for i in 1..(nk1 + 1) {
             c[i - 1] = z[i - 1];
             g[[i - 1, k2]] = 0.0;
@@ -261,7 +276,7 @@ pub fn fpcurf(
                         }
                         for i in 1..(i2 + 1) {
                             // transformations to the left hand side
-                            i1 = i + 1;
+                            let i1 = i + 1;
                             // call fprota(cos,sin,h(i1),g(j,i1))
                             h[i - 1] = h[i1 - 1];
                         }
@@ -273,13 +288,13 @@ pub fn fpcurf(
             // call fpback(g,c,nk1,k2,c,nest)
             // computation of f[p]
             let mut fp: f64 = 0.0;
-            l = k2;
+            let mut l = k2;
             for it in 1..(m + 1) {
                 if x[it - 1] >= t[l - 1] && l <= nk1 {
                     l = l + 1;
                 }
-                l0 = l - k2;
-                term = 0.0;
+                let mut l0 = l - k2;
+                let mut term = 0.0;
                 for j in 1..(k1 + 1) {
                     l0 = l0 + 1;
                     term = term + c[l0 - 1] * q[[it - 1, j - 1]];
@@ -300,7 +315,7 @@ pub fn fpcurf(
             // expected
 
             // find the new value for p
-            let (p, p1, f1, p3, f3): (f64, f64, f64, f64, f64) = fprati(p1, f1, p2, f2, p3, f3);
+            let (p, p1, f1, p3, f3): (f64, f64, f64, f64, f64) = fprati::fprati(p1, f1, p2, f2, p3, f3);
             // error codes and messages
         }
     }

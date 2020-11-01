@@ -38,7 +38,7 @@ pub fn curfit(
         }
     }
     assert!(
-        n >= nmin && ng <= nest,
+        n >= nmin && n <= nest,
         "total number of knots must be within nmin and nest"
     );
 

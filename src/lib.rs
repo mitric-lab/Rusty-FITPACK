@@ -47,7 +47,7 @@ pub fn splrep(
     assert_eq!(w.len(), m, "length of w is not equal to length of x");
     assert_eq!(x.len(), y.len(), "length of x is not equal to length of y");
     assert!(
-        1 <= k && l <= 5,
+        1 <= k && k <= 5,
         "Given degree of the spline is not supported (1<=k<=5)."
     );
     assert!(m > k, "m > must hold");

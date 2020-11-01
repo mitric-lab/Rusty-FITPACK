@@ -7,9 +7,9 @@
 ///      Thus it is imperative that that k <= l <= n-k but this
 ///      is not checked.
 ///  The original subroutine in FITPACK by Paul Dierckx is named fpbspl
-fn fbspl(x: f64, t: &Vec<f64>, k: u8, n: usize, l: usize, h: Vec<f64>) -> Vec<f64> {
+pub fn fbspl(x: f64, t: &Vec<f64>, k: usize, n: usize, l: usize, h: Vec<f64>) -> Vec<f64> {
     let mut h: Vec<f64> = h;
-    let hh: [f64; 19] = [0.0; 19];
+    let mut hh: [f64; 19] = [0.0; 19];
 
     for j in 1..(k + 1) {
         for i in 1..(j + 1) {

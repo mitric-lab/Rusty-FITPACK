@@ -1,4 +1,4 @@
-///  function check_knots verifies the number and the position of the knots
+///  The function check_knots verifies the number and the position of the knots
 ///  t[j],j=0,1,2,...,n-1 of a spline of degree k, in relation to the number
 ///  and the position of the data points x[i],i=0,1,2,...,m-1. if all of the
 ///  following conditions are fulfilled, the function will return zero.
@@ -16,7 +16,9 @@
 ///  The original subroutine in FITPACK by Paul Dierckx is named fpchec
 pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: usize, m: usize, n: usize) -> u8 {
     let k1: usize = k + 1;
+    let k2: usize = k1 + 1;
     let nk1: usize = n - k1;
+    let nk2: usize = nk1 + 1;
     // check condition no 1
     if nk1 < k1 || nk1 > m {
         return 10;

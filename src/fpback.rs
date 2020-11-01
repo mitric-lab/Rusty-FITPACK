@@ -3,10 +3,10 @@ use ndarray::ArrayView2;
 ///  Function fpback calculates the solution of the system of
 ///  equations $a * c = z$ with a a n x n upper triangular matrix
 ///  of bandwidth k.
-fn fpback(a: ArrayView2<f64>, z: Vec<f64>, n: usize, k: u8, c: Vec<f64>) -> Vec<f64> {
+pub fn fpback(a: ArrayView2<f64>, z: Vec<f64>, n: usize, k: usize, c: Vec<f64>) -> Vec<f64> {
     let mut c: Vec<f64> = c;
 
-    let k1: usize = k as usize - 1;
+    let k1: usize = k - 1;
     c[n - 1] = z[n - 1] / a[[n - 1, 0]];
     let mut i: usize = n - 1;
     if i != 0 {
