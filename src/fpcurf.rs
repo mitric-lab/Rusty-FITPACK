@@ -183,7 +183,7 @@ pub fn fpcurf(
                 nplus = 1;
                 ier = 0;
             } else {
-                npl1 = nplus as f64 * 2;
+                npl1 = (nplus * 2) as f64;
                 let rn: f64 = nplus as f64;
                 if fpold - fp > acc {
                     npl1 = rn * fpms / (fpold - fp);

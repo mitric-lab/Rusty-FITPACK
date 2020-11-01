@@ -52,13 +52,13 @@ pub fn splrep(
     );
     assert!(m > k, "m > must hold");
     let xb: f64 = xb.unwrap_or(x[0]);
-    let xe: f64 = xe.unwrap_or(x[-1]);
+    let xe: f64 = xe.unwrap_or(x[x.len()-1]);
     assert!(0 <= task && task <= 1, "task must be 0, or 1");
-    if t == Some(T) {
+    if t.is_some() {
         task = -1;
     }
     let (t, nest): (Vec<f64>, usize) = if task == -1 {
-        assert_eq!(t, Some(T), "knots must be given for task = -1");
+        assert(t.is_some(), "knots must be given for task = -1");
         let numknots: usize = t.unwrap().len();
         let nest: usize = numknots + 2 * k + 2;
         let mut new_t: Vec<f64> = vec![0.0; numknots];
@@ -69,7 +69,8 @@ pub fn splrep(
         }
         (new_t, nest)
     } else if task == 0 {
-        (vec![0.0; nest], max(m + k + 1, 2 * k + 3))
+        let nest: usize = max(m + k + 1, 2 * k + 3);
+        (vec![0.0; nest], nest)
     };
     let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
     let iwrk: Vec<i32> = vec![0; nest];
