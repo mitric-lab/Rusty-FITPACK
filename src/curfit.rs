@@ -14,7 +14,7 @@ pub fn curfit(
     t: Vec<f64>,
     wrk: Vec<f64>,
     iwrk: Vec<i32>,
-) -> (usize, Vec<f64>, f64, i8) {
+) -> (Vec<f64>, usize, Vec<f64>, f64, i8) {
     let m: usize = x.len();
     let n: usize = nest.clone();
     let lwrk: usize = wrk.len();
@@ -62,6 +62,6 @@ pub fn curfit(
     // let ig: usize = ib + nest * k2;
     // let iq: usize = ig + nest * k2;
 
-    let (n, c, fp, ier) = fpcurf::fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
-    return (n, c, fp, ier);
+    let (t, n, c, fp, ier) = fpcurf::fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
+    return (t, n, c, fp, ier);
 }

@@ -16,7 +16,7 @@ pub fn fpcurf(
     k2: usize,
     n: usize,
     t: Vec<f64>,
-) -> (usize, Vec<f64>, f64, i8) {
+) -> (Vec<f64>, usize, Vec<f64>, f64, i8) {
     let nmin: usize = 2 * k as usize;
 
     let tol: f64 = 1e-3;
@@ -30,12 +30,21 @@ pub fn fpcurf(
     let mut c: Vec<f64> = vec![0.0; nest];
     let mut z: Vec<f64> = vec![0.0; nest];
     let nmax: usize = n + k1;
-    let mut h: Vec<f64> = vec![0.0; 7];
+    let mut h: Vec<f64> = vec![0.0; 20];
     let mut fpms: f64 = 0.0;
     let nk1: usize = n - k1;
     let mut yi: f64;
     let mut i2: usize = 1;
     let mut fp: f64 = 0.0;
+
+    let mut p: f64 = 0.0;
+    let mut p1: f64 = 0.0;
+    let mut p2: f64 = 0.0;
+    let mut p3: f64 = 0.0;
+    let mut f1: f64 = 0.0;
+    let mut f2: f64 = 0.0;
+    let mut f3: f64 = 0.0;
+    let mut ich3: usize = 0;
 
     let mut a: Array2<f64> = Array2::zeros((nest, k1));
     let mut b: Array2<f64> = Array2::zeros((nest, k2));
@@ -63,17 +72,17 @@ pub fn fpcurf(
         // find the position of the interior knots in case of interpolation
         let mk1 = m - k1;
         if mk1 != 0 {
-            let mut i: usize = k1;
-            let mut j: usize = k / 2 + 1;
+            let mut i: usize = k2;
+            let mut j: usize = k / 2 + 2;
             if k % 2 == 0 {
-                for _l in 0..mk1 {
-                    t[i] = (x[j] + x[j - 1]) * 0.5;
+                for _l in 1..(mk1+1) {
+                    t[i-1] = (x[j - 1] + x[j - 2]) * 0.5;
                     i = i + 1;
                     j = j + 1;
                 }
             } else {
-                for _l in 0..mk1 - 1 {
-                    t[i] = x[j];
+                for _l in 1..(mk1 + 1) {
+                    t[i-1] = x[j-1];
                     i = i + 1;
                     j = j + 1;
                 }
@@ -119,7 +128,7 @@ pub fn fpcurf(
                 l = l + 1;
             }
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
-            let mut h: Vec<f64> = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
+            h = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
             for i in 1..(k1 + 1) {
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
@@ -139,6 +148,7 @@ pub fn fpcurf(
                     yi = tmp_a;
                     z[j as usize - 1] = tmp_b;
                     if i != k1 {
+                        i2 = 1;
                         let mut i3: usize = i + 1;
                         for i1 in i3..(k1 + 1) {
                             i2 = i2 + 1;
@@ -234,21 +244,21 @@ pub fn fpcurf(
     // PART 2
     // call fpdisc
     // inital value for p
-    let p1: f64 = 0.0;
-    let f1: f64 = fp0 - s;
-    let p3: f64 = -1.0;
-    let f3: f64 = fpms;
+    let mut p1: f64 = 0.0;
+    let mut f1: f64 = fp0 - s;
+    let mut p3: f64 = -1.0;
+    let mut f3: f64 = fpms;
     let mut p: f64 = 0.0;
     for i in 1..(nk1 + 1) {
         p = p + a[[i - 1, 0]]
     }
     let rn = nk1;
     p = rn as f64 / p;
-    let ich1: usize = 0;
+    let mut ich1: usize = 0;
     let ich2: usize = 0;
     let n8: usize = n - nmin;
     // iteration process to find the root of f[p] = s
-    for iter in 1..(maxit + 1) {
+    'outer: for iter in 1..(maxit + 1) {
         //  the rows of matrix b with weight 1/p are rotated into the
         //  triangularised observation matrix a which is stored in g.
         let pinv = 1.0 / p;
@@ -302,24 +312,60 @@ pub fn fpcurf(
                 fp = fp + (w[it - 1] * (term - y[it - 1])).powi(2);
             }
             // test whether the approximation sp(x) is an acceptable solution
+            // or the maximal number of iterations is reached
             fpms = fp - s;
-            // test whether the maximal number of iterations is reached
-
+            if fpms < acc || iter == maxit {
+                break 'outer;
+            }
             // carry out one more step of the iteration process
-            let p2 = p;
-            let f2: f64 = fpms;
-            // our initial choice of p is too large
+            p2 = p;
+            f2 = fpms;
+            //if(ich3.ne.0) go to 340
 
-            // our initial choice of p is too small
+            // our initial choice of p is too large
+            if (f2-f3) <= acc {
+                p3 = p2;
+                f3  = f2;
+                p = p * 0.4;
+                if p <= p1 {
+                    p = p1 * 0.9 + p2 * 0.1;
+                }
+            } else {
+                // our initial choice of p is too small
+                if ich1 == 0{
+                    if f2 < 0.0 {
+                        ich3 = 1;
+                    }
+                    p1 = p2;
+                    f1 = f2;
+                    p = p * 0.4;
+                    if p >= p3 {
+                        p = p2 * 0.1 + p3 * 0.9
+                    }
+                }
+            }
+
+            if ich1 == 0 && f2 > 0.0 {
+                ich1 = 1
+            }
+
 
             // test whether the iteration process proceeds as theoretically
             // expected
-
+            if f2 >= f1 || f2 <= f3 {
+                ier = 2;
+                break 'outer
+            }
             // find the new value for p
-            let (p, p1, f1, p3, f3): (f64, f64, f64, f64, f64) =
+            let (tmp_p, tmp_p1, tmp_f1, tmp_p3, tmp_f3): (f64, f64, f64, f64, f64) =
                 fprati::fprati(p1, f1, p2, f2, p3, f3);
+            p = tmp_p;
+            p1 = tmp_p1;
+            f1 = tmp_f1;
+            p3 = tmp_p3;
+            f3 = tmp_f3;
             // error codes and messages
         }
     }
-    return (n, c, fp, ier);
+    return (t, n, c, fp, ier);
 }

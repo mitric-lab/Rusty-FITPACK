@@ -10,7 +10,7 @@
 pub fn fbspl(x: f64, t: &Vec<f64>, k: usize, n: usize, l: usize, h: Vec<f64>) -> Vec<f64> {
     let mut h: Vec<f64> = h;
     let mut hh: [f64; 19] = [0.0; 19];
-
+    h[0] = 1.0;
     for j in 1..(k + 1) {
         for i in 1..(j + 1) {
             hh[i - 1] = h[i - 1];
@@ -28,5 +28,11 @@ pub fn fbspl(x: f64, t: &Vec<f64>, k: usize, n: usize, l: usize, h: Vec<f64>) ->
             }
         }
     }
+    // println!("FPBSPL");
+    // println!("x {:?}", x);
+    // println!("t {:?}", t);
+    // println!("k {:?}", k);
+    // println!("l {:?}", l);
+    // println!("h {:?}", h);
     return h;
 }
