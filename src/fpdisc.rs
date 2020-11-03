@@ -3,7 +3,7 @@ use ndarray::Array2;
 ///  The function fpdisc calculates the discontinuity jumps of the kth
 ///  derivative of the b-splines of degree k at the knots t[k+2]..t[n-k-1]
 ///  The original subroutine in FITPACK by Paul Dierckx is named fpdisc
-fn fpdisc(t: Vec<f64>, k2: usize, n: usize, b: Array2<f64>) -> f64 {
+pub(crate) fn fpdisc(t: Vec<f64>, k2: usize, n: usize, b: Array2<f64>) -> Array2<f64> {
     let mut b: Array2<f64> = b;
 
     let mut h: Vec<f64> = vec![0.0; 12];
@@ -35,5 +35,5 @@ fn fpdisc(t: Vec<f64>, k2: usize, n: usize, b: Array2<f64>) -> f64 {
             lp = lp + 1;
         }
     }
-    return 1.0;
+    return b;
 }

@@ -1,5 +1,6 @@
 use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fpknot, fprati, fprota};
 use ndarray::Array2;
+use std::cmp::{max, min};
 
 pub fn fpcurf(
     iopt: i8,
@@ -37,13 +38,14 @@ pub fn fpcurf(
     let mut i2: usize = 1;
     let mut fp: f64 = 0.0;
 
+    let mut finished: bool = false;
+
+    let mut piv: f64 = 0.0;
     let mut p: f64 = 0.0;
     let mut p1: f64 = 0.0;
     let mut p2: f64 = 0.0;
-    let mut p3: f64 = 0.0;
-    let mut f1: f64 = 0.0;
+    let mut p3: f64 = -1.0;
     let mut f2: f64 = 0.0;
-    let mut f3: f64 = 0.0;
     let mut ich3: usize = 0;
 
     let mut a: Array2<f64> = Array2::zeros((nest, k1));
@@ -60,7 +62,10 @@ pub fn fpcurf(
             fp0 = fpint[n - 1];
             fpold = fpint[n - 2];
             nplus = nrdata[n - 1];
-        } else if fp0 <= s {
+        }
+        if fp0 <= s {
+            fpold = 0.0;
+            nplus = 0;
             nrdata[0] = m - 2;
         }
     } else if s == 0.0 && iopt >= 0 {
@@ -91,7 +96,7 @@ pub fn fpcurf(
     }
     // main loop for the different sets of knots. m is a save upper bound
     // for the number of trials.
-    for _iter in 1..(m + 1) {
+    'main_loop: for _iter in 1..(m + 1) {
         if n == nmin {
             ier = -2;
         };
@@ -107,7 +112,7 @@ pub fn fpcurf(
         }
         //  compute the b-spline coefficients of the least-squares spline
         //  sinf(x). the observation matrix a is built up row by row and
-        //  reduced to upper triangular form by givens transformations.
+        //  reduced to upper triangular form by Givens transformations.
         //  at the same time fp=f(p=inf) is computed.
         // initialize the observation matrix a
         for i in 1..(nk1 + 1) {
@@ -117,7 +122,7 @@ pub fn fpcurf(
                 a[[i - 1, j - 1]] = 0.0;
             }
         }
-        let mut l: usize = k as usize;
+        let mut l: usize = k1;
         for it in 1..(m + 1) {
             // fetch the current data point x[it], y[it]
             let xi: f64 = x[it - 1];
@@ -136,15 +141,17 @@ pub fn fpcurf(
             let mut j: i32 = l as i32 - k1 as i32;
             for i in 1..(k1 + 1) {
                 j = j + 1;
-                let piv: f64 = h[i - 1];
+                piv = h[i - 1];
                 if piv != 0.0 {
-                    // calculate the parameters of the givens transformation
+                    // calculate the parameters of the Givens transformation
                     // CALL FPGIVS(piv,A(j,1),cos,sin)
-                    let (ww, cos, sin): (f64, f64, f64) = fpgivs::fpgivs(piv, a[[j as usize - 1, 0]]);
+                    let (ww, cos, sin): (f64, f64, f64) =
+                        fpgivs::fpgivs(piv, a[[j as usize - 1, 0]]);
                     a[[j as usize - 1, 0]] = ww;
                     // transformations to right hand side.
                     // CALL FPROTA(cos,sin,yi,Z(j))
-                    let (tmp_a, tmp_b): (f64, f64) = fprota::fprota(cos, sin, yi, z[j as usize - 1]);
+                    let (tmp_a, tmp_b): (f64, f64) =
+                        fprota::fprota(cos, sin, yi, z[j as usize - 1]);
                     yi = tmp_a;
                     z[j as usize - 1] = tmp_b;
                     if i != k1 {
@@ -167,21 +174,21 @@ pub fn fpcurf(
             fp = fp + yi * yi;
         }
         if ier == -2 {
-            fp0 = fp
+            fp0 = fp;
         }
         fpint[n - 1] = fp0;
         fpint[n - 2] = fpold;
         nrdata[n - 1] = nplus;
         //  backward substitution to obtain the b-spline coefficients.
         // call fpback(a,z,nk1,k1,c,nest)
-        let mut c: Vec<f64> = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
+        c = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
         //  test whether the approximation sinf(x) is an acceptable solution .
-        assert!(
-            iopt >= 0,
-            "the approximation sinf[x] is not an acceptable solution"
-        );
         fpms = fp - s;
         assert!(fpms.abs() >= acc);
+        if iopt < 0 || fpms.abs() < acc {
+            finished = true;
+            break 'main_loop;
+        }
         // if f(p=inf) < s accept the choice of knots
         let mut npl1: f64 = 0.0;
         if fpms >= 0.0 {
@@ -198,8 +205,9 @@ pub fn fpcurf(
                 let rn: f64 = nplus as f64;
                 if fpold - fp > acc {
                     npl1 = rn * fpms / (fpold - fp);
-                    //nplus = [nplus * 2, [npl1 as usize, nplus/2, 1 as usize].max()].min();
+                    //;
                 }
+                nplus = min(nplus * 2, max(max(npl1 as usize, nplus / 2), 1 as usize));
             }
             fpold = fp;
             //  compute the sum((w(i)*(y(i)-s(x(i))))**2) for each knot interval
@@ -230,6 +238,7 @@ pub fn fpcurf(
                 }
                 fpint[nrint - 1] = fpart;
                 for _l in 1..(nplus + 1) {
+                    println!("WE SHOULD ADD A KNOT");
                     //  add a new knot.
                     // call fpknot(x,m,t,n,fpint,nrdata,nrint,nest,1)
                     //  if n=nmax we locate the knots as for interpolation.
@@ -244,11 +253,10 @@ pub fn fpcurf(
     // PART 2
     // call fpdisc
     // inital value for p
-    let mut p1: f64 = 0.0;
+    b = fpdisc::fpdisc(t.clone(), k2, n, b);
     let mut f1: f64 = fp0 - s;
-    let mut p3: f64 = -1.0;
     let mut f3: f64 = fpms;
-    let mut p: f64 = 0.0;
+    p3 = - 1.0;
     for i in 1..(nk1 + 1) {
         p = p + a[[i - 1, 0]]
     }
@@ -256,115 +264,145 @@ pub fn fpcurf(
     p = rn as f64 / p;
     let mut ich1: usize = 0;
     let ich2: usize = 0;
+    ich3 = 0;
     let n8: usize = n - nmin;
-    // iteration process to find the root of f[p] = s
-    'outer: for iter in 1..(maxit + 1) {
-        //  the rows of matrix b with weight 1/p are rotated into the
-        //  triangularised observation matrix a which is stored in g.
-        let pinv = 1.0 / p;
-        for i in 1..(nk1 + 1) {
-            c[i - 1] = z[i - 1];
-            g[[i - 1, k2 - 1]] = 0.0;
-            for j in 1..(k1 + 1) {
-                g[[i - 1, j - 1]] = a[[i - 1, j - 1]];
-            }
-            for it in 1..(n8 + 1) {
-                for i in 1..(k2 + 1) {
-                    h[i - 1] = b[[it - 1, i - 1]] * pinv;
-                }
-                yi = 0.0;
-                for j in it..(nk1 + 1) {
-                    let piv = h[0];
-                    //  calculate the parameters of the givens transformation.
-                    //  call fpgivs(piv,g(j,1),cos,sin)
-                    //  transformations to right hand side.
-                    //  call fprota(cos,sin,yi,c(j))
-                    if j != nk1 {
-                        if j > n8 {
-                            i2 = nk1 - j;
-                        } else {
-                            i2 = k1;
-                        }
-                        for i in 1..(i2 + 1) {
-                            // transformations to the left hand side
-                            let i1 = i + 1;
-                            // call fprota(cos,sin,h(i1),g(j,i1))
-                            h[i - 1] = h[i1 - 1];
-                        }
-                        h[i2] = 0.0;
-                    }
-                }
-            }
-            // backward substitution to obtain the b-spline coefficients
-            // call fpback(g,c,nk1,k2,c,nest)
-            // computation of f[p]
-            let mut l = k2;
-            for it in 1..(m + 1) {
-                if x[it - 1] >= t[l - 1] && l <= nk1 {
-                    l = l + 1;
-                }
-                let mut l0 = l - k2;
-                let mut term = 0.0;
+    if finished == false {
+        // iteration process to find the root of f[p] = s
+        'outer: for iter in 1..(maxit + 1) {
+            //  the rows of matrix b with weight 1/p are rotated into the
+            //  triangularised observation matrix a which is stored in g.
+            let pinv = 1.0 / p;
+            for i in 1..(nk1 + 1) {
+                c[i - 1] = z[i - 1];
+                g[[i - 1, k2 - 1]] = 0.0;
                 for j in 1..(k1 + 1) {
-                    l0 = l0 + 1;
-                    term = term + c[l0 - 1] * q[[it - 1, j - 1]];
+                    g[[i - 1, j - 1]] = a[[i - 1, j - 1]];
                 }
-                fp = fp + (w[it - 1] * (term - y[it - 1])).powi(2);
-            }
-            // test whether the approximation sp(x) is an acceptable solution
-            // or the maximal number of iterations is reached
-            fpms = fp - s;
-            if fpms < acc || iter == maxit {
-                break 'outer;
-            }
-            // carry out one more step of the iteration process
-            p2 = p;
-            f2 = fpms;
-            //if(ich3.ne.0) go to 340
-
-            // our initial choice of p is too large
-            if (f2-f3) <= acc {
-                p3 = p2;
-                f3  = f2;
-                p = p * 0.4;
-                if p <= p1 {
-                    p = p1 * 0.9 + p2 * 0.1;
-                }
-            } else {
-                // our initial choice of p is too small
-                if ich1 == 0{
-                    if f2 < 0.0 {
-                        ich3 = 1;
+                for it in 1..(n8 + 1) {
+                    for i in 1..(k2 + 1) {
+                        h[i - 1] = b[[it - 1, i - 1]] * pinv;
                     }
-                    p1 = p2;
-                    f1 = f2;
-                    p = p * 0.4;
-                    if p >= p3 {
-                        p = p2 * 0.1 + p3 * 0.9
+                    yi = 0.0;
+                    for j in it..(nk1 + 1) {
+                        piv = h[0];
+                        //  calculate the parameters of the givens transformation.
+                        //  call fpgivs(piv,g(j,1),cos,sin)
+                        println!("PIV {}, G {}", piv, g[[j as usize - 1, 0]]);
+                        let (ww, cos, sin): (f64, f64, f64) =
+                            fpgivs::fpgivs(piv, g[[j as usize - 1, 0]]);
+                        g[[j as usize - 1, 0]] = ww;
+                        //  transformations to right hand side.
+                        //  call fprota(cos,sin,yi,c(j))
+                        let (tmp_a, tmp_b): (f64, f64) =
+                            fprota::fprota(cos, sin, yi, c[j as usize - 1]);
+                        yi = tmp_a;
+                        c[j as usize - 1] = tmp_b;
+                        if j != nk1 {
+                            if j > n8 {
+                                i2 = nk1 - j;
+                            } else {
+                                i2 = k1;
+                            }
+                            for i in 1..(i2 + 1) {
+                                // transformations to the left hand side
+                                let i1 = i + 1;
+                                // call fprota(cos,sin,h(i1),g(j,i1))
+                                let (tmp_a, tmp_b): (f64, f64) =
+                                    fprota::fprota(cos, sin, h[i1-1], g[[j as usize - 1, i1-1]]);
+                                println!{"TMP_A {}", tmp_a};
+                                h[i1-1] = tmp_a;
+                                g[[j as usize - 1, i1-1]] = tmp_b;
+                                h[i - 1] = h[i1 - 1];
+                            }
+                            h[i2] = 0.0;
+                        }
                     }
                 }
-            }
+                panic!();
+                // backward substitution to obtain the b-spline coefficients
+                // call fpback(g,c,nk1,k2,c,nest)
+                // computation of f[p]
+                c = fpback::fpback(g.view(), c.clone(), nk1, k1, c.clone());
+                let mut l = k2;
+                for it in 1..(m + 1) {
+                    if x[it - 1] >= t[l - 1] && l <= nk1 {
+                        l = l + 1;
+                    }
+                    let mut l0 = l - k2;
+                    let mut term = 0.0;
+                    for j in 1..(k1 + 1) {
+                        l0 = l0 + 1;
+                        term = term + c[l0 - 1] * q[[it - 1, j - 1]];
+                    }
+                    fp = fp + (w[it - 1] * (term - y[it - 1])).powi(2);
+                }
+                // test whether the approximation sp(x) is an acceptable solution
+                // or the maximal number of iterations is reached
+                fpms = fp - s;
+                if fpms < acc {
+                    break 'outer;
+                }
+                assert_ne!(
+                iter, maxit,
+                "Error. The maximal number of iterations maxit (set to 20 by the program) allowed
+                 for finding a smoothing spline with fp=s has been reached.
+                 Probably cause: s is too small."
+            );
+                // carry out one more step of the iteration process
+                p2 = p;
+                f2 = fpms;
+                println!("{}", fpms);
+                println!("f1 {}, f2 {}, f3 {}", f1, f2, f3);
+                //if(ich3.ne.0) go to 340
+                if ich3 == 0 {
+                    // our initial choice of p is too large
+                    if (f2 - f3) <= acc {
+                        p3 = p2;
+                        f3 = f2;
+                        p = p * 0.4;
+                        if p <= p1 {
+                            p = p1 * 0.9 + p2 * 0.1;
+                        }
+                        continue;
+                    } else {
+                        if f2 < 0.0 {
+                            ich3 = 1;
+                        }
+                        // our initial choice of p is too small
+                        if ich1 == 0 && (f1 - f2) <= acc {
+                            p1 = p2;
+                            f1 = f2;
+                            p = p * 0.4;
+                            if p >= p3 {
+                                p = p2 * 0.1 + p3 * 0.9
+                            }
+                            if f2 > 0.0 {
+                                ich1 = 1
+                            }
+                        }
+                    }
+                }
 
-            if ich1 == 0 && f2 > 0.0 {
-                ich1 = 1
+                //test whether the iteration process proceeds as theoretically
+                //expected
+                if f2 >= f1 || f2 <= f3 {
+                    panic!(
+                        "Error. A theoretically impossible result was found during the iteration process
+                         for finding a smoothing spline with fp = s.
+                         Probably cause: s is too small."
+                    )
+                }
+                // find the new value for p
+                let (tmp_p, tmp_p1, tmp_f1, tmp_p3, tmp_f3): (f64, f64, f64, f64, f64) =
+                    fprati::fprati(p1, f1, p2, f2, p3, f3);
+                p = tmp_p;
+                p1 = tmp_p1;
+                f1 = tmp_f1;
+                p3 = tmp_p3;
+                f3 = tmp_f3;
+                // error codes and messages
+                println!("C: {:?}", c);
             }
-
-
-            // test whether the iteration process proceeds as theoretically
-            // expected
-            if f2 >= f1 || f2 <= f3 {
-                ier = 2;
-                break 'outer
-            }
-            // find the new value for p
-            let (tmp_p, tmp_p1, tmp_f1, tmp_p3, tmp_f3): (f64, f64, f64, f64, f64) =
-                fprati::fprati(p1, f1, p2, f2, p3, f3);
-            p = tmp_p;
-            p1 = tmp_p1;
-            f1 = tmp_f1;
-            p3 = tmp_p3;
-            f3 = tmp_f3;
-            // error codes and messages
         }
     }
     return (t, n, c, fp, ier);

@@ -10,6 +10,5 @@ pub fn fpgivs(piv: f64, ww: f64) -> (f64, f64, f64) {
     let cos: f64 = ww / dd;
     let sin: f64 = piv / dd;
     let ww: f64 = dd;
-
     return (ww, cos, sin);
 }
