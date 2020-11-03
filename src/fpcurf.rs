@@ -18,7 +18,7 @@ pub fn fpcurf(
     n: usize,
     t: Vec<f64>,
 ) -> (Vec<f64>, usize, Vec<f64>, f64, i8) {
-    let nmin: usize = 2 * k as usize;
+    let nmin: usize = 2 * k as usize + 2;
 
     let tol: f64 = 1e-3;
     let acc: f64 = tol * s;
@@ -48,7 +48,7 @@ pub fn fpcurf(
     let mut f2: f64 = 0.0;
     let mut ich3: usize = 0;
 
-    let mut a: Array2<f64> = Array2::zeros((nest, k1));
+    let mut a: Array2<f64> = Array2::zeros((nest, k2));
     let mut b: Array2<f64> = Array2::zeros((nest, k2));
     let mut g: Array2<f64> = Array2::zeros((nest, k2));
     let mut q: Array2<f64> = Array2::zeros((m, k1));
@@ -94,6 +94,7 @@ pub fn fpcurf(
             }
         }
     }
+    println!{"fp0 {}, fpold {}", fp0, fpold};
     // main loop for the different sets of knots. m is a save upper bound
     // for the number of trials.
     'main_loop: for _iter in 1..(m + 1) {
@@ -127,11 +128,14 @@ pub fn fpcurf(
             // fetch the current data point x[it], y[it]
             let xi: f64 = x[it - 1];
             let wi: f64 = w[it - 1];
+            //println!("xi {}, wi {}", xi, wi);
             yi = y[it - 1] * wi;
+            //println!("yi {}, wi {}", yi, wi);
             // search for knot interval t[l] <= xi < t[l+1].
-            while xi >= t[l + 1] && l != nk1 {
+            while xi >= t[l] && l != nk1 {
                 l = l + 1;
             }
+            //println!("l {}", l);
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
             h = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
             for i in 1..(k1 + 1) {
@@ -173,9 +177,12 @@ pub fn fpcurf(
             //  right hand sides.
             fp = fp + yi * yi;
         }
+        assert_ne!(1, 1, "stop");
         if ier == -2 {
             fp0 = fp;
         }
+
+        println!("AAA {}", a);
         fpint[n - 1] = fp0;
         fpint[n - 2] = fpold;
         nrdata[n - 1] = nplus;
@@ -184,9 +191,13 @@ pub fn fpcurf(
         c = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
         //  test whether the approximation sinf(x) is an acceptable solution .
         fpms = fp - s;
-        assert!(fpms.abs() >= acc);
         if iopt < 0 || fpms.abs() < acc {
+            println!("CONVERGED");
             finished = true;
+            assert_ne!(1, 1, "CONVERGED");
+            break 'main_loop;
+        }
+        if fpms < 0.0 {
             break 'main_loop;
         }
         // if f(p=inf) < s accept the choice of knots
@@ -239,6 +250,7 @@ pub fn fpcurf(
                 fpint[nrint - 1] = fpart;
                 for _l in 1..(nplus + 1) {
                     println!("WE SHOULD ADD A KNOT");
+                    // TODO: call of fpknot is missing
                     //  add a new knot.
                     // call fpknot(x,m,t,n,fpint,nrdata,nrint,nest,1)
                     //  if n=nmax we locate the knots as for interpolation.
@@ -249,7 +261,9 @@ pub fn fpcurf(
             }
         }
     }
-
+    if ier == -2 {
+        finished = true;
+    }
     // PART 2
     // call fpdisc
     // inital value for p
@@ -266,6 +280,7 @@ pub fn fpcurf(
     let ich2: usize = 0;
     ich3 = 0;
     let n8: usize = n - nmin;
+    println!("B {}, n8 {}, n {}, nmin {}", b, n8, n, nmin);
     if finished == false {
         // iteration process to find the root of f[p] = s
         'outer: for iter in 1..(maxit + 1) {
@@ -278,14 +293,17 @@ pub fn fpcurf(
                 for j in 1..(k1 + 1) {
                     g[[i - 1, j - 1]] = a[[i - 1, j - 1]];
                 }
+                println!("GGG {}, shape {:?}, a shape {:?}", g, g.shape(), a.shape());
+                g = a.clone();
                 for it in 1..(n8 + 1) {
                     for i in 1..(k2 + 1) {
                         h[i - 1] = b[[it - 1, i - 1]] * pinv;
                     }
                     yi = 0.0;
+                    println!("HHH {:?}, it {}", h, it);
                     for j in it..(nk1 + 1) {
                         piv = h[0];
-                        //  calculate the parameters of the givens transformation.
+                        //  calculate the parameters of the Givens transformation.
                         //  call fpgivs(piv,g(j,1),cos,sin)
                         println!("PIV {}, G {}", piv, g[[j as usize - 1, 0]]);
                         let (ww, cos, sin): (f64, f64, f64) =
@@ -309,6 +327,7 @@ pub fn fpcurf(
                                 // call fprota(cos,sin,h(i1),g(j,i1))
                                 let (tmp_a, tmp_b): (f64, f64) =
                                     fprota::fprota(cos, sin, h[i1-1], g[[j as usize - 1, i1-1]]);
+                                println!("h[i1-1] {}, g[j-1,i1-1] {}, j-1 {}, i1-1 {}, cos {}, sin {}", h[i1-1], g[[j as usize - 1, i1-1]], j-1, i1-1, cos, sin);
                                 println!{"TMP_A {}", tmp_a};
                                 h[i1-1] = tmp_a;
                                 g[[j as usize - 1, i1-1]] = tmp_b;
@@ -318,7 +337,7 @@ pub fn fpcurf(
                         }
                     }
                 }
-                panic!();
+                //panic!();
                 // backward substitution to obtain the b-spline coefficients
                 // call fpback(g,c,nk1,k2,c,nest)
                 // computation of f[p]
@@ -382,7 +401,7 @@ pub fn fpcurf(
                         }
                     }
                 }
-
+                println!("C: {:?}", c);
                 //test whether the iteration process proceeds as theoretically
                 //expected
                 if f2 >= f1 || f2 <= f3 {
@@ -401,7 +420,6 @@ pub fn fpcurf(
                 p3 = tmp_p3;
                 f3 = tmp_f3;
                 // error codes and messages
-                println!("C: {:?}", c);
             }
         }
     }

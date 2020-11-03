@@ -33,6 +33,5 @@ pub fn fbspl(x: f64, t: &Vec<f64>, k: usize, n: usize, l: usize, h: Vec<f64>) ->
     // println!("t {:?}", t);
     // println!("k {:?}", k);
     // println!("l {:?}", l);
-    println!("h {:?}", h);
     return h;
 }

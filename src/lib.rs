@@ -76,7 +76,9 @@ pub fn splrep(
     };
     let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
     let iwrk: Vec<i32> = vec![0; nest];
-
+    println!("len wrk {}", wrk.len());
+    println!("nest {} iwrk {:?}", nest, iwrk);
+    //assert_ne!(1, 1);
     let (t, n, c, fp, ier): (Vec<f64>, usize, Vec<f64>, f64, i8) =
         curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t.clone(), wrk, iwrk);
     // curfit call here
@@ -91,8 +93,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-        let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0];
+        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0];
+        let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 72.0, 81.0, 100.0, 121.0];
         let (a, b, c) = splrep(
             x, y, None, None, None, None, None, None, None, None, None, None,
         );
