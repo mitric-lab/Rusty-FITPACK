@@ -30,7 +30,7 @@ pub fn fpcurf(
     let mut fpint: Vec<f64> = vec![0.0; nest];
     let mut c: Vec<f64> = vec![0.0; nest];
     let mut z: Vec<f64> = vec![0.0; nest];
-    let nmax: usize = n + k1;
+    let nmax: usize = m + k1;
     let mut h: Vec<f64> = vec![0.0; 20];
     let mut fpms: f64 = 0.0;
     let nk1: usize = n - k1;
@@ -69,9 +69,9 @@ pub fn fpcurf(
             nrdata[0] = m - 2;
         }
     } else if s == 0.0 && iopt >= 0 {
-        //n = nmax;
-        println!(
-            //nmax <= nest,
+        n = nmax;
+        assert!(
+            nmax <= nest,
             "the storage space exceeds available space, try to increase nest"
         );
         // find the position of the interior knots in case of interpolation
@@ -142,6 +142,8 @@ pub fn fpcurf(
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
             }
+            //println!("GG {}", g);
+            //println!("hh {:?}", h);
             let mut j: i32 = l as i32 - k1 as i32;
             for i in 1..(k1 + 1) {
                 j = j + 1;
@@ -172,12 +174,14 @@ pub fn fpcurf(
                         }
                     }
                 }
+                //println!("a {}", a);
             }
             //  add contribution of this row to the sum of squares of residual
             //  right hand sides.
+            println!("fp {}, yi {}", fp, yi);
             fp = fp + yi * yi;
         }
-        assert_ne!(1, 1, "stop");
+
         if ier == -2 {
             fp0 = fp;
         }
@@ -191,10 +195,12 @@ pub fn fpcurf(
         c = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
         //  test whether the approximation sinf(x) is an acceptable solution .
         fpms = fp - s;
-        if iopt < 0 || fpms.abs() < acc {
+        println!("FPMS {}, ACC {}", fpms, acc);
+        //assert_ne!(1, 1, "stop");
+        if iopt < 0 || fpms.abs() < acc || n == nmax {
             println!("CONVERGED");
             finished = true;
-            assert_ne!(1, 1, "CONVERGED");
+            //assert_ne!(1, 1, "CONVERGED");
             break 'main_loop;
         }
         if fpms < 0.0 {
