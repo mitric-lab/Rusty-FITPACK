@@ -33,7 +33,7 @@ pub fn fpcurf(
     let nmax: usize = m + k1;
     let mut h: Vec<f64> = vec![0.0; 20];
     let mut fpms: f64 = 0.0;
-    let nk1: usize = n - k1;
+    let mut nk1: usize = n - k1;
     let mut yi: f64;
     let mut i2: usize = 1;
     let mut fp: f64 = 0.0;
@@ -56,7 +56,7 @@ pub fn fpcurf(
     let mut fpold: f64 = 0.0;
     let mut fp0: f64 = 0.0;
     let mut nplus: usize = 0;
-
+    println!("NNNN {} SSSS {}", n, s);
     if s > 0.0 && iopt >= 0 {
         if iopt != 0 || n != nmin {
             fp0 = fpint[n - 1];
@@ -64,6 +64,7 @@ pub fn fpcurf(
             nplus = nrdata[n - 1];
         }
         if fp0 <= s {
+            n = nmin;
             fpold = 0.0;
             nplus = 0;
             nrdata[0] = m - 2;
@@ -94,9 +95,11 @@ pub fn fpcurf(
             }
         }
     }
-    println! {"fp0 {}, fpold {}", fp0, fpold};
+    println! {"NNNNNNNNN {} fp0 {}, fpold {}",n, fp0, fpold};
+    nk1 = n - k1;
     // main loop for the different sets of knots. m is a save upper bound
     // for the number of trials.
+    // loop 200 in original code
     'main_loop: for _iter in 1..(m + 1) {
         if n == nmin {
             ier = -2;
@@ -118,13 +121,14 @@ pub fn fpcurf(
         // initialize the observation matrix a
         for i in 1..(nk1 + 1) {
             z[i - 1] = 0.0;
-            // TODO: we dont need this
-            for j in 1..(k - 1) {
+            // TODO: we dont need this?
+            for j in 1..(k1 + 1) {
                 a[[i - 1, j - 1]] = 0.0;
             }
         }
         let mut l: usize = k1;
-        for it in 1..(m + 1) {
+        // loop 130 in original code
+        'child_loop: for it in 1..(m + 1) {
             // fetch the current data point x[it], y[it]
             let xi: f64 = x[it - 1];
             let wi: f64 = w[it - 1];
@@ -132,10 +136,13 @@ pub fn fpcurf(
             yi = y[it - 1] * wi;
             //println!("yi {}, wi {}", yi, wi);
             // search for knot interval t[l] <= xi < t[l+1].
+            println!("XI={}, T[L]={}, L={}, NK1={}", xi, t[l], l, nk1);
             while xi >= t[l] && l != nk1 {
+                println!("XXXIII {} TLLL {}", xi, t[l]);
+                println!("LLL {} NK! {}", l, nk1);
                 l = l + 1;
             }
-            //println!("l {}", l);
+            println!("l {}", l);
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
             h = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
             for i in 1..(k1 + 1) {
@@ -144,34 +151,50 @@ pub fn fpcurf(
             }
             //println!("GG {}", g);
             //println!("hh {:?}", h);
+
             let mut j: i32 = l as i32 - k1 as i32;
-            for i in 1..(k1 + 1) {
+            // loop 110 in original code
+            'baby_loop: for i in 1..(k1 + 1) {
                 j = j + 1;
+                println!("JJJ {}", j);
                 piv = h[i - 1];
+                //println!("PIVVV {}", piv);
                 if piv != 0.0 {
                     // calculate the parameters of the Givens transformation
                     // CALL FPGIVS(piv,A(j,1),cos,sin)
+                    println!("AJ BEFORE {}, PIV {}", a[[j as usize - 1, 0]], piv);
                     let (ww, cos, sin): (f64, f64, f64) =
                         fpgivs::fpgivs(piv, a[[j as usize - 1, 0]]);
                     a[[j as usize - 1, 0]] = ww;
+                    println!("AJ AFTER {}", a[[j as usize - 1, 0]]);
                     // transformations to right hand side.
                     // CALL FPROTA(cos,sin,yi,Z(j))
+                    println!(
+                        "CALL FPROTA, cos {}, sin {}, yi {}, zj{}",
+                        cos,
+                        sin,
+                        yi,
+                        z[j as usize - 1]
+                    );
                     let (tmp_a, tmp_b): (f64, f64) =
                         fprota::fprota(cos, sin, yi, z[j as usize - 1]);
                     yi = tmp_a;
                     z[j as usize - 1] = tmp_b;
-                    if i != k1 {
-                        i2 = 1;
-                        let mut i3: usize = i + 1;
-                        for i1 in i3..(k1 + 1) {
-                            i2 = i2 + 1;
-                            // transformations to left hand side
-                            // call fprota(cos,sin,h(i1),a(j,i2))
-                            let (tmp_a, tmp_b): (f64, f64) =
-                                fprota::fprota(cos, sin, h[i1 - 1], a[[j as usize - 1, i2 - 1]]);
-                            h[i1 - 1] = tmp_a;
-                            a[[j as usize - 1, i2 - 1]] = tmp_b;
-                        }
+                    println!("ZJ NEW {}", z[j as usize - 1]);
+                    if i == k1 {
+                        println!("BREAK OUT");
+                        break 'baby_loop;
+                    }
+                    i2 = 1;
+                    let mut i3: usize = i + 1;
+                    for i1 in i3..(k1 + 1) {
+                        i2 = i2 + 1;
+                        // transformations to left hand side
+                        // call fprota(cos,sin,h(i1),a(j,i2))
+                        let (tmp_a, tmp_b): (f64, f64) =
+                            fprota::fprota(cos, sin, h[i1 - 1], a[[j as usize - 1, i2 - 1]]);
+                        h[i1 - 1] = tmp_a;
+                        a[[j as usize - 1, i2 - 1]] = tmp_b;
                     }
                 }
                 //println!("a {}", a);
@@ -187,25 +210,25 @@ pub fn fpcurf(
         }
 
         println!("AAA {}", a);
+        println!("ZZZ {:?}", z);
         fpint[n - 1] = fp0;
         fpint[n - 2] = fpold;
         nrdata[n - 1] = nplus;
         //  backward substitution to obtain the b-spline coefficients.
         // call fpback(a,z,nk1,k1,c,nest)
+
         c = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
         //  test whether the approximation sinf(x) is an acceptable solution .
         fpms = fp - s;
         println!("FPMS {}, ACC {}", fpms, acc);
         //assert_ne!(1, 1, "stop");
-        if iopt < 0 || fpms.abs() < acc || n == nmax {
+        if iopt < 0 || fpms.abs() < acc || n == nmax || fpms < 0.0 {
             println!("CONVERGED");
             finished = true;
             //assert_ne!(1, 1, "CONVERGED");
             break 'main_loop;
         }
-        if fpms < 0.0 {
-            break 'main_loop;
-        }
+
         // if f(p=inf) < s accept the choice of knots
         let mut npl1: f64 = 0.0;
         if fpms >= 0.0 {
@@ -272,7 +295,7 @@ pub fn fpcurf(
     }
     // PART 2
     // call fpdisc
-    // inital value for p
+    // initial value for p
     b = fpdisc::fpdisc(t.clone(), k2, n, b);
     let mut f1: f64 = fp0 - s;
     let mut f3: f64 = fpms;
