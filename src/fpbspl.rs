@@ -22,16 +22,11 @@ pub fn fbspl(x: f64, t: &Vec<f64>, k: usize, n: usize, l: usize, h: Vec<f64>) ->
             if t[li - 1] == t[lj - 1] {
                 h[i] = 0.0;
             } else {
-                let f = hh[i - 1] / (t[li - 1] - t[lj - 1]);
+                let f: f64 = hh[i - 1] / (t[li - 1] - t[lj - 1]);
                 h[i - 1] = h[i - 1] + f * (t[li - 1] - x);
                 h[i] = f * (x - t[lj - 1]);
             }
         }
     }
-    // println!("FPBSPL");
-    // println!("x {:?}", x);
-    // println!("t {:?}", t);
-    // println!("k {:?}", k);
-    // println!("l {:?}", l);
     return h;
 }

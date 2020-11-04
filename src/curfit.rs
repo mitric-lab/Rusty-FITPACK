@@ -13,12 +13,11 @@ pub fn curfit(
     nest: usize,
     t: Vec<f64>,
     wrk: Vec<f64>,
-    iwrk: Vec<i32>,
 ) -> (Vec<f64>, usize, Vec<f64>, f64, i8) {
     let m: usize = x.len();
     let n: usize = nest.clone();
     let lwrk: usize = wrk.len();
-    assert!(k >= 0 && k <= 5, "the degree k must be within 1 and 5");
+    assert!(k <= 5, "the degree k must be within 1 and 5");
     let k1: usize = k + 1;
     let k2: usize = k1 + 1;
     assert!(iopt >= -1 && iopt <= 1, "iopt must be within -1 and 1");
@@ -30,7 +29,6 @@ pub fn curfit(
     let lwest: usize = m * k1 as usize + nest * (7 + 3 * k as usize);
     assert!(lwrk >= lwest, "lwrk is to small");
     assert!(xb <= x[0] && xe >= x[m - 1]);
-    //assert!(x.is_sorted(), "x has to be sorted in ascending order");
     if iopt >= 0 {
         assert!(s >= 0.0, "smoothing factor cannot be negative");
         if s == 0.0 && nest <= m + k {
@@ -46,7 +44,6 @@ pub fn curfit(
         n >= nmin && n <= nest,
         "total number of knots must be within nmin and nest"
     );
-
     let mut j: usize = n;
     let mut t: Vec<f64> = t;
     for i in 1..(k1 + 1) {
@@ -54,18 +51,10 @@ pub fn curfit(
         t[j - 1] = xe;
         j = j - 1;
     }
-
     // verify the number and position of knots
-    let mut ier: u8 = 0; //fpchec::check_knots(&x, &t, k, m, n);
+    let ier: u8 = 0; //
+    //fpchec::check_knots(&x, &t, k, m, n);
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
-
-    // we partition the working space and determine the spline approximation
-    // let ifp: usize = 0;
-    // let iz: usize = ifp + nest;
-    // let ia: usize = iz + nest;
-    // let ib: usize = ia + nest * k1;
-    // let ig: usize = ib + nest * k2;
-    // let iq: usize = ig + nest * k2;
 
     let (t, n, c, fp, ier) = fpcurf::fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
     return (t, n, c, fp, ier);

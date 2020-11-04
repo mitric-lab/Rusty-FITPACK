@@ -44,16 +44,16 @@ fn fpknot(
     }
     //  let coincide the new knot t(number+k+1) with a data point x(nrx)
     //  inside the old knot interval t(number+k) <= x <= t(number+k+1).
-    let ihalf = maxpt / 2 + 1;
-    let nrx = maxbeg + ihalf;
-    let next = number + 1;
+    let ihalf: usize = maxpt / 2 + 1;
+    let nrx: usize = maxbeg + ihalf;
+    let next: usize = number + 1;
     if next <= nrint {
         // adjust different parameters
         for j in next..nrint {
-            let jj = next + nrint - j;
+            let jj: usize = next + nrint - j;
             fpint[jj] = fpint[jj - 1];
             nrdata[jj] = nrdata[jj - 1];
-            let jk = jj + k;
+            let jk: usize = jj + k;
             t[jk] = t[jk - 1];
         }
     }

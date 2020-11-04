@@ -1,5 +1,6 @@
 use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fpknot, fprati, fprota};
 use ndarray::Array2;
+use ndarray::prelude::*;
 use std::cmp::{max, min};
 
 pub fn fpcurf(
@@ -48,15 +49,16 @@ pub fn fpcurf(
     let mut f2: f64 = 0.0;
     let mut ich3: usize = 0;
 
-    let mut a: Array2<f64> = Array2::zeros((nest, k2));
-    let mut b: Array2<f64> = Array2::zeros((nest, k2));
-    let mut g: Array2<f64> = Array2::zeros((nest, k2));
-    let mut q: Array2<f64> = Array2::zeros((m, k1));
+    // create arrays with Fortran (column-major) memory layout filled with zeros
+    let mut a: Array2<f64> = Array2::zeros((nest, k2).f());
+    let mut b: Array2<f64> = Array2::zeros((nest, k2).f());
+    let mut g: Array2<f64> = Array2::zeros((nest, k2).f());
+    let mut q: Array2<f64> = Array2::zeros((m, k1).f());
 
     let mut fpold: f64 = 0.0;
     let mut fp0: f64 = 0.0;
     let mut nplus: usize = 0;
-    println!("NNNN {} SSSS {}", n, s);
+
     if s > 0.0 && iopt >= 0 {
         if iopt != 0 || n != nmin {
             fp0 = fpint[n - 1];
@@ -95,7 +97,6 @@ pub fn fpcurf(
             }
         }
     }
-    println! {"NNNNNNNNN {} fp0 {}, fpold {}",n, fp0, fpold};
     nk1 = n - k1;
     // main loop for the different sets of knots. m is a save upper bound
     // for the number of trials.
@@ -128,80 +129,56 @@ pub fn fpcurf(
         }
         let mut l: usize = k1;
         // loop 130 in original code
-        'child_loop: for it in 1..(m + 1) {
+        for it in 1..(m + 1) {
             // fetch the current data point x[it], y[it]
             let xi: f64 = x[it - 1];
             let wi: f64 = w[it - 1];
-            //println!("xi {}, wi {}", xi, wi);
+
             yi = y[it - 1] * wi;
-            //println!("yi {}, wi {}", yi, wi);
+
             // search for knot interval t[l] <= xi < t[l+1].
-            println!("XI={}, T[L]={}, L={}, NK1={}", xi, t[l], l, nk1);
             while xi >= t[l] && l != nk1 {
-                println!("XXXIII {} TLLL {}", xi, t[l]);
-                println!("LLL {} NK! {}", l, nk1);
                 l = l + 1;
             }
-            println!("l {}", l);
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
             h = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
             for i in 1..(k1 + 1) {
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
             }
-            //println!("GG {}", g);
-            //println!("hh {:?}", h);
 
             let mut j: i32 = l as i32 - k1 as i32;
             // loop 110 in original code
             'baby_loop: for i in 1..(k1 + 1) {
                 j = j + 1;
-                println!("JJJ {}", j);
                 piv = h[i - 1];
-                //println!("PIVVV {}", piv);
                 if piv != 0.0 {
                     // calculate the parameters of the Givens transformation
-                    // CALL FPGIVS(piv,A(j,1),cos,sin)
-                    println!("AJ BEFORE {}, PIV {}", a[[j as usize - 1, 0]], piv);
                     let (ww, cos, sin): (f64, f64, f64) =
                         fpgivs::fpgivs(piv, a[[j as usize - 1, 0]]);
                     a[[j as usize - 1, 0]] = ww;
-                    println!("AJ AFTER {}", a[[j as usize - 1, 0]]);
                     // transformations to right hand side.
-                    // CALL FPROTA(cos,sin,yi,Z(j))
-                    println!(
-                        "CALL FPROTA, cos {}, sin {}, yi {}, zj{}",
-                        cos,
-                        sin,
-                        yi,
-                        z[j as usize - 1]
-                    );
                     let (tmp_a, tmp_b): (f64, f64) =
                         fprota::fprota(cos, sin, yi, z[j as usize - 1]);
                     yi = tmp_a;
                     z[j as usize - 1] = tmp_b;
-                    println!("ZJ NEW {}", z[j as usize - 1]);
                     if i == k1 {
-                        println!("BREAK OUT");
                         break 'baby_loop;
                     }
                     i2 = 1;
-                    let mut i3: usize = i + 1;
+                    let i3: usize = i + 1;
                     for i1 in i3..(k1 + 1) {
                         i2 = i2 + 1;
                         // transformations to left hand side
-                        // call fprota(cos,sin,h(i1),a(j,i2))
                         let (tmp_a, tmp_b): (f64, f64) =
                             fprota::fprota(cos, sin, h[i1 - 1], a[[j as usize - 1, i2 - 1]]);
                         h[i1 - 1] = tmp_a;
                         a[[j as usize - 1, i2 - 1]] = tmp_b;
                     }
                 }
-                //println!("a {}", a);
             }
             //  add contribution of this row to the sum of squares of residual
             //  right hand sides.
-            println!("fp {}, yi {}", fp, yi);
             fp = fp + yi * yi;
         }
 
@@ -209,23 +186,16 @@ pub fn fpcurf(
             fp0 = fp;
         }
 
-        println!("AAA {}", a);
-        println!("ZZZ {:?}", z);
         fpint[n - 1] = fp0;
         fpint[n - 2] = fpold;
         nrdata[n - 1] = nplus;
         //  backward substitution to obtain the b-spline coefficients.
-        // call fpback(a,z,nk1,k1,c,nest)
-
         c = fpback::fpback(a.view(), z.clone(), nk1, k1, c.clone());
+
         //  test whether the approximation sinf(x) is an acceptable solution .
         fpms = fp - s;
-        println!("FPMS {}, ACC {}", fpms, acc);
-        //assert_ne!(1, 1, "stop");
         if iopt < 0 || fpms.abs() < acc || n == nmax || fpms < 0.0 {
-            println!("CONVERGED");
             finished = true;
-            //assert_ne!(1, 1, "CONVERGED");
             break 'main_loop;
         }
 
@@ -294,7 +264,6 @@ pub fn fpcurf(
         finished = true;
     }
     // PART 2
-    // call fpdisc
     // initial value for p
     b = fpdisc::fpdisc(t.clone(), k2, n, b);
     let mut f1: f64 = fp0 - s;
@@ -303,38 +272,34 @@ pub fn fpcurf(
     for i in 1..(nk1 + 1) {
         p = p + a[[i - 1, 0]]
     }
-    let rn = nk1;
+    let rn: usize = nk1;
     p = rn as f64 / p;
     let mut ich1: usize = 0;
     let ich2: usize = 0;
     ich3 = 0;
     let n8: usize = n - nmin;
-    println!("B {}, n8 {}, n {}, nmin {}", b, n8, n, nmin);
     if finished == false {
         // iteration process to find the root of f[p] = s
         'outer: for iter in 1..(maxit + 1) {
             //  the rows of matrix b with weight 1/p are rotated into the
             //  triangularised observation matrix a which is stored in g.
-            let pinv = 1.0 / p;
+            let pinv: f64 = 1.0 / p;
             for i in 1..(nk1 + 1) {
                 c[i - 1] = z[i - 1];
                 g[[i - 1, k2 - 1]] = 0.0;
                 for j in 1..(k1 + 1) {
                     g[[i - 1, j - 1]] = a[[i - 1, j - 1]];
                 }
-                println!("GGG {}, shape {:?}, a shape {:?}", g, g.shape(), a.shape());
                 g = a.clone();
                 for it in 1..(n8 + 1) {
                     for i in 1..(k2 + 1) {
                         h[i - 1] = b[[it - 1, i - 1]] * pinv;
                     }
                     yi = 0.0;
-                    println!("HHH {:?}, it {}", h, it);
                     for j in it..(nk1 + 1) {
                         piv = h[0];
                         //  calculate the parameters of the Givens transformation.
                         //  call fpgivs(piv,g(j,1),cos,sin)
-                        println!("PIV {}, G {}", piv, g[[j as usize - 1, 0]]);
                         let (ww, cos, sin): (f64, f64, f64) =
                             fpgivs::fpgivs(piv, g[[j as usize - 1, 0]]);
                         g[[j as usize - 1, 0]] = ww;
@@ -353,23 +318,12 @@ pub fn fpcurf(
                             for i in 1..(i2 + 1) {
                                 // transformations to the left hand side
                                 let i1 = i + 1;
-                                // call fprota(cos,sin,h(i1),g(j,i1))
                                 let (tmp_a, tmp_b): (f64, f64) = fprota::fprota(
                                     cos,
                                     sin,
                                     h[i1 - 1],
                                     g[[j as usize - 1, i1 - 1]],
                                 );
-                                println!(
-                                    "h[i1-1] {}, g[j-1,i1-1] {}, j-1 {}, i1-1 {}, cos {}, sin {}",
-                                    h[i1 - 1],
-                                    g[[j as usize - 1, i1 - 1]],
-                                    j - 1,
-                                    i1 - 1,
-                                    cos,
-                                    sin
-                                );
-                                println! {"TMP_A {}", tmp_a};
                                 h[i1 - 1] = tmp_a;
                                 g[[j as usize - 1, i1 - 1]] = tmp_b;
                                 h[i - 1] = h[i1 - 1];
@@ -378,9 +332,7 @@ pub fn fpcurf(
                         }
                     }
                 }
-                //panic!();
                 // backward substitution to obtain the b-spline coefficients
-                // call fpback(g,c,nk1,k2,c,nest)
                 // computation of f[p]
                 c = fpback::fpback(g.view(), c.clone(), nk1, k1, c.clone());
                 let mut l = k2;
@@ -411,9 +363,6 @@ pub fn fpcurf(
                 // carry out one more step of the iteration process
                 p2 = p;
                 f2 = fpms;
-                println!("{}", fpms);
-                println!("f1 {}, f2 {}, f3 {}", f1, f2, f3);
-                //if(ich3.ne.0) go to 340
                 if ich3 == 0 {
                     // our initial choice of p is too large
                     if (f2 - f3) <= acc {
@@ -442,7 +391,6 @@ pub fn fpcurf(
                         }
                     }
                 }
-                println!("C: {:?}", c);
                 //test whether the iteration process proceeds as theoretically
                 //expected
                 if f2 >= f1 || f2 <= f3 {

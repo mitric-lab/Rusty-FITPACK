@@ -30,14 +30,14 @@ pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: usize, m: usize, n: usi
     let mut j: usize = n;
     for i in 1..(k + 1) {
         if t[(i - 1) as usize] > t[i as usize] {
-            println!(
+            panic!(
                 "condition 2 is not satisfied. t[i-1]: {}, t[i]: {}",
                 t[i - 1],
                 t[i]
             );
         }
         if t[j - 1] < t[j - 2] {
-            println!(
+            panic!(
                 "condition 2 is not satisfied. t[j-1]: {}, t[j-2]: {}",
                 t[j - 1],
                 t[j - 2]
@@ -48,7 +48,7 @@ pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: usize, m: usize, n: usi
     // check condition no 3
     for i in k1..(nk1 + 1) {
         if t[i - 1] <= t[i - 2] {
-            println!(
+            panic!(
                 "condition 3 is not satisfied. t[i-1]: {}, t[i-2]: {}",
                 t[i - 1],
                 t[i - 2]

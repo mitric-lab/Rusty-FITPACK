@@ -5,8 +5,6 @@
 pub fn fprati(p1: f64, f1: f64, p2: f64, f2: f64, p3: f64, f3: f64) -> (f64, f64, f64, f64, f64) {
     let mut p1: f64 = p1;
     let mut f1: f64 = f1;
-    let mut p2: f64 = p2;
-    let mut f2: f64 = f2;
     let mut p3: f64 = p3;
     let mut f3: f64 = f3;
 

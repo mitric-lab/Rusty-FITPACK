@@ -25,7 +25,5 @@ pub fn fpback(a: ArrayView2<f64>, z: Vec<f64>, n: usize, k: usize, c: Vec<f64>) 
             i = i - 1;
         }
     }
-    //println!("{:?}", a);
-    //println!("{:?}", c);
     return c;
 }
