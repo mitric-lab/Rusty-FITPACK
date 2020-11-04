@@ -34,7 +34,12 @@ pub fn curfit(
     if iopt >= 0 {
         assert!(s >= 0.0, "smoothing factor cannot be negative");
         if s == 0.0 && nest <= m + k {
-            panic!("s: {}, nest: {}, m+k+1: {}, nest cannot be smaller than m+k+1",s,nest,m+k1)
+            panic!(
+                "s: {}, nest: {}, m+k+1: {}, nest cannot be smaller than m+k+1",
+                s,
+                nest,
+                m + k1
+            )
         }
     }
     assert!(
@@ -51,7 +56,7 @@ pub fn curfit(
     }
 
     // verify the number and position of knots
-    let mut ier: u8 = 0;//fpchec::check_knots(&x, &t, k, m, n);
+    let mut ier: u8 = 0; //fpchec::check_knots(&x, &t, k, m, n);
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
     // we partition the working space and determine the spline approximation

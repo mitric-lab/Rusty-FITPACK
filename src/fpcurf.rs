@@ -80,21 +80,21 @@ pub fn fpcurf(
             let mut i: usize = k2;
             let mut j: usize = k / 2 + 2;
             if k % 2 == 0 {
-                for _l in 1..(mk1+1) {
-                    t[i-1] = (x[j - 1] + x[j - 2]) * 0.5;
+                for _l in 1..(mk1 + 1) {
+                    t[i - 1] = (x[j - 1] + x[j - 2]) * 0.5;
                     i = i + 1;
                     j = j + 1;
                 }
             } else {
                 for _l in 1..(mk1 + 1) {
-                    t[i-1] = x[j-1];
+                    t[i - 1] = x[j - 1];
                     i = i + 1;
                     j = j + 1;
                 }
             }
         }
     }
-    println!{"fp0 {}, fpold {}", fp0, fpold};
+    println! {"fp0 {}, fpold {}", fp0, fpold};
     // main loop for the different sets of knots. m is a save upper bound
     // for the number of trials.
     'main_loop: for _iter in 1..(m + 1) {
@@ -276,7 +276,7 @@ pub fn fpcurf(
     b = fpdisc::fpdisc(t.clone(), k2, n, b);
     let mut f1: f64 = fp0 - s;
     let mut f3: f64 = fpms;
-    p3 = - 1.0;
+    p3 = -1.0;
     for i in 1..(nk1 + 1) {
         p = p + a[[i - 1, 0]]
     }
@@ -331,12 +331,24 @@ pub fn fpcurf(
                                 // transformations to the left hand side
                                 let i1 = i + 1;
                                 // call fprota(cos,sin,h(i1),g(j,i1))
-                                let (tmp_a, tmp_b): (f64, f64) =
-                                    fprota::fprota(cos, sin, h[i1-1], g[[j as usize - 1, i1-1]]);
-                                println!("h[i1-1] {}, g[j-1,i1-1] {}, j-1 {}, i1-1 {}, cos {}, sin {}", h[i1-1], g[[j as usize - 1, i1-1]], j-1, i1-1, cos, sin);
-                                println!{"TMP_A {}", tmp_a};
-                                h[i1-1] = tmp_a;
-                                g[[j as usize - 1, i1-1]] = tmp_b;
+                                let (tmp_a, tmp_b): (f64, f64) = fprota::fprota(
+                                    cos,
+                                    sin,
+                                    h[i1 - 1],
+                                    g[[j as usize - 1, i1 - 1]],
+                                );
+                                println!(
+                                    "h[i1-1] {}, g[j-1,i1-1] {}, j-1 {}, i1-1 {}, cos {}, sin {}",
+                                    h[i1 - 1],
+                                    g[[j as usize - 1, i1 - 1]],
+                                    j - 1,
+                                    i1 - 1,
+                                    cos,
+                                    sin
+                                );
+                                println! {"TMP_A {}", tmp_a};
+                                h[i1 - 1] = tmp_a;
+                                g[[j as usize - 1, i1 - 1]] = tmp_b;
                                 h[i - 1] = h[i1 - 1];
                             }
                             h[i2] = 0.0;
