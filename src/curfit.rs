@@ -1,5 +1,5 @@
-use crate::fpchec;
-use crate::fpcurf;
+use crate::fpchec::fpchec;
+use crate::fpcurf::fpcurf;
 
 pub fn curfit(
     iopt: i8,
@@ -56,6 +56,6 @@ pub fn curfit(
     //fpchec::check_knots(&x, &t, k, m, n);
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
-    let (t, n, c, fp, ier) = fpcurf::fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
+    let (t, n, c, fp, ier) = fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
     return (t, n, c, fp, ier);
 }
