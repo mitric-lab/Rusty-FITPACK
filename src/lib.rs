@@ -1,3 +1,23 @@
+//! Rusty FITPACK provides the 1D routines for spline interpolation and fitting
+//! in Rust. The functions are translated from the original Fortran77 code [FITPACK](http://www.netlib.org/dierckx) by Paul Dierckx.
+//! This packages provides almost the same interface as the [SciPy](http://www.scipy.org) wrapper for FITPACK.
+//! In concrete terms, the package implements the two functions, `splrep` and `splev` (not yet supported).
+//!
+//!
+//!
+//! References
+//! ----------
+//! Based on algorithms described by Paul Dierckx in Ref [1-4]:<br>
+//!
+//! [1] P. Dierckx, "An algorithm for smoothing, differentiation and integration of experimental data using spline functions", J.Comp.Appl.Maths 1 (1975) 165-184.
+//!
+//! [2] P. Dierckx, "A fast algorithm for smoothing data on a rectangular grid while using spline functions", SIAM J.Numer.Anal. 19 (1982) 1286-1304.
+//!
+//! [3] P. Dierckx, "An improved algorithm for curve fitting with spline functions", report tw54, Dept. Computer Science,K.U. Leuven, 1981.
+//!
+//! [4] P. Dierckx, "Curve and surface fitting with splines", Monographs on Numerical Analysis, Oxford University Press, 1993.
+
+
 use std::cmp::max;
 mod curfit;
 mod fpcurf;
@@ -9,6 +29,54 @@ mod fprati;
 mod fprota;
 mod fpbspl;
 mod fpback;
+
+/// Find the B-spline representation of a 1-D curve.
+/// Given the set of data points ``(x[i], y[i])`` determine a smooth spline
+/// approximation of degree k on the interval ``xb <= x <= xe``.
+///
+/// #### Example
+/// Simple example of spline interpolation
+/// ```
+/// use Rusty_FITPACK::splrep;
+/// let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
+///
+/// let (t, c, k) = splrep(x, y, None, None, None, None, None, None, None, None, None, None);
+/// ```
+///
+/// #### Parameters
+/// ----------
+/// `x, y` : The data points defining a curve `y = f(x)`. <br> <br>
+/// `w` : Strictly positive `Vec<f64>` of weights the same length as `x` and `y`.
+/// The weights are used in computing the weighted least-squares spline
+/// fit. If the errors in the `y` values have standard-deviation given by the
+/// vector `d`, then w should be `1/d`. Default is ones(len(x)). <br> <br>
+/// `xb, xe` : The interval to fit.  If None, these default to `x[0]` and `x[-1]`
+/// respectively. <br> <br>
+/// `k` : The degree of the spline fit. It is recommended to use cubic splines.
+/// Even values of `k` should be avoided especially with small `s` values.
+/// `1 <= k <= 5` <br> <br>
+/// `task` : `{0, -1}` If `task==0` find `t` and `c` for a given smoothing factor, `s`. <br>
+/// If `task=-1` find the weighted least square spline for a given set of
+/// knots, `t`. These should be interior knots as knots on the ends will be
+/// added automatically.<br> <br>
+/// `s` : A smoothing condition. The amount of smoothness is determined by
+/// satisfying the conditions: `sum((w * (y - g)).powi(2),axis=0) <= s` where g(x)
+/// is the smoothed interpolation of `(x,y)`. The user can use s to control
+/// the tradeoff between closeness and smoothness of fit. Larger s means
+/// more smoothing while smaller values of s indicate less smoothing.
+/// Recommended values of s depend on the weights, w. If the weights
+/// represent the inverse of the standard-deviation of y, then a good s
+/// value should be found in the range `(m-(2*m).sqrt(),m+(2*m).sqrt())` where m is
+/// the number of datapoints in `x, y,` and `w`. default : `s=m-(2*m).sqrt()` if
+/// weights are supplied. `s = 0.0` (interpolating) if no weights are
+/// supplied. <br> <br>
+/// `t` : The knots needed for `task=-1`. If given then task is automatically set
+/// to -1. <br> <br>
+/// `full_output` Should be None. Feature is not implemented yet. <br> <br>
+/// `per` : Should be None. Periodic spline approximations are not supported yet. <br> <br>
+/// `quiet`: Should be None. Feature is not implemented yet. <br> <br>
+///
 
 pub fn splrep(
     x: Vec<f64>,

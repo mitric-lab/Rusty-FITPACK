@@ -7,6 +7,7 @@ This packages provides almost the same interface as the [SciPy](http://www.scipy
 In concrete terms, the package implements the two functions, `splrep` and `splev`.
  
 
+Please read the [Documentation](http://jhoche.de/Rusty-FITPACK/Rusty_FITPACK/)
 
 References
 ----------
