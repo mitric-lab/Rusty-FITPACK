@@ -1,9 +1,0 @@
-mod fpback;
-mod fpbspl;
-mod fpchec;
-mod fpcurf;
-mod fpdisc;
-mod fpgivs;
-mod fpknot;
-mod fprati;
-mod fprota;

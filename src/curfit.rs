@@ -1,4 +1,4 @@
-use crate::fpchec::fpchec;
+use crate::fpchec::check_knots;
 use crate::fpcurf::fpcurf;
 
 pub fn curfit(
@@ -53,7 +53,7 @@ pub fn curfit(
     }
     // verify the number and position of knots
     let ier: u8 = 0; //
-    //fpchec::check_knots(&x, &t, k, m, n);
+    //check_knots(&x, &t, k, m, n);
     assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
     let (t, n, c, fp, ier) = fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);

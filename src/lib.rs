@@ -1,6 +1,14 @@
 use std::cmp::max;
-mod splines;
-pub mod curfit;
+mod curfit;
+mod fpcurf;
+mod fpchec;
+mod fpdisc;
+mod fpgivs;
+mod fpknot;
+mod fprati;
+mod fprota;
+mod fpbspl;
+mod fpback;
 
 pub fn splrep(
     x: Vec<f64>,
@@ -66,7 +74,7 @@ pub fn splrep(
     let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
 
     let (t, n, c, fp, ier): (Vec<f64>, usize, Vec<f64>, f64, i8) =
-        splines::curfit(task, x, y, w, xb, xe, k, s, nest, t.clone(), wrk);
+        curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t.clone(), wrk);
 
     let tck = (t[..n].to_vec(), c[..n].to_vec(), k);
     return tck;
