@@ -30,8 +30,8 @@ mod fprati;
 mod fprota;
 
 /// Find the B-spline representation of a 1-D curve.
-/// Given the set of data points ``(x[i], y[i])`` determine a smooth spline
-/// approximation of degree k on the interval ``xb <= x <= xe``.
+/// Given the set of data points $(x(i), y(i))$ determine a smooth spline
+/// approximation of degree k on the interval $xb <= x <= xe$.
 ///
 /// #### Example
 /// Simple example of spline interpolation
@@ -45,11 +45,11 @@ mod fprota;
 ///
 /// #### Parameters
 /// ----------
-/// `x, y` : The data points defining a curve `y = f(x)`. <br> <br>
+/// `x, y` : The data points defining a curve $y = f(x)$. <br> <br>
 /// `w` : Strictly positive `Vec<f64>` of weights the same length as `x` and `y`.
 /// The weights are used in computing the weighted least-squares spline
 /// fit. If the errors in the `y` values have standard-deviation given by the
-/// vector `d`, then w should be `1/d`. Default is ones(len(x)). <br> <br>
+/// vector `d`, then w should be `1/d`. Default is `vec![1.0; x.len()]`. <br> <br>
 /// `xb, xe` : The interval to fit.  If None, these default to `x[0]` and `x[-1]`
 /// respectively. <br> <br>
 /// `k` : The degree of the spline fit. It is recommended to use cubic splines.
@@ -147,49 +147,37 @@ pub fn splrep(
     return tck;
 }
 
-
-///  The function splev evaluates a number of points $x(i)$ with $i=1,2,...,m$
-///  a spline $s(x)$ of degree $k$, given in its b-spline representation.
+/// #### NOT WORKING YET
+///  The function `splev` evaluates a number of points $x(i)$ with $i=1,2,...,m$
+///  a spline $s(x)$ of degree $k$, given in its B-spline representation.
 ///
-///  calling sequence:
-///     call splev(t,n,c,k,x,y,m,e,ier)
 ///
-///  input parameters:
-///    t    : array,length n, which contains the position of the knots.
-///    n    : integer, giving the total number of knots of s(x).
-///    c    : array,length n, which contains the b-spline coefficients.
-///    k    : integer, giving the degree of s(x).
-///    x    : array,length m, which contains the points where s(x) must
-///           be evaluated.
-///    m    : integer, giving the number of points where s(x) must be
-///           evaluated.
-///    e    : integer, if 0 the spline is extrapolated from the end
+///  Arguments:
+///  ----------
+///    `t`  : position of the knots. <br>
+///    `c`    : b-spline coefficients. <br>
+///    `k`    : the degree of $s(x)$. <br>
+///    `x`    : points where $s(x)$ must be evaluated. <br>
+///    `e`    : if 0 the spline is extrapolated from the end
 ///           spans for points not in the support, if 1 the spline
 ///           evaluates to zero for those points, if 2 ier is set to
 ///           1 and the subroutine returns, and if 3 the spline evaluates
-///           to the value of the nearest boundary point.
+///           to the value of the nearest boundary point. <br>
 ///
-///  output parameter:
-///    y    : array,length m, giving the value of s(x) at the different
-///           points.
-///    ier  : error flag
-///      ier = 0 : normal return
-///      ier = 1 : argument out of bounds and e == 2
-///      ier =10 : invalid input data (see restrictions)
+///  Output:
+///  ----------
+///    `y`    : the value of s(x) at the different points.<br>
 ///
-///  restrictions:
-///    m >= 1
-///--    t(k+1) <= x(i) <= x(i+1) <= t(n-k) , i=1,2,...,m-1.
+///  Restrictions:
+///  ----------
+///    $m >= 1$<br> <br>
+///   $t(k+1) <= x(i) <= x(i+1) <= t(n-k)$ with  $i = 1, 2,...,m-1$<br> <br>
 ///
-///  other subroutines required: fpbspl.
-///
-///  references :
-///    de boor c  : on calculating with b-splines, j. approximation theory
-///                 6 (1972) 50-62.
-///    cox m.g.   : the numerical evaluation of b-splines, j. inst. maths
-///                 applics 10 (1972) 134-149.
-///    dierckx p. : curve and surface fitting with splines, monographs on
-///                 numerical analysis, oxford university press, 1993.
+///  References
+///  ----------
+///  [1]  De Boor, C. On calculating with B-splines, J. Approximation Theory, 6 (1972) 50-62.<br>
+///  [2]  Cox, M.G., The numerical evaluation of B-splines, J. Inst. Maths Applics 10 (1972) 134-149.<br>
+///  [3]  Dierckx, P. Curve and Surface fitting with splines, Monographs on Numerical Analysis, Oxford University Press, 1993. <br>
 pub fn splev() -> f64 {
 
     return 1.0;

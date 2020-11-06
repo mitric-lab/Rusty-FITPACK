@@ -8,3 +8,10 @@ edition = "2018"
 
 [dependencies]
 ndarray = "0.12"
+
+# enable LaTeX rendering in documentation
+[package.metadata.docs.rs]
+rustdoc-args = [
+    "--html-in-header",
+    "katex.html",
+]
