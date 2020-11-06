@@ -17,18 +17,17 @@
 //!
 //! [4] P. Dierckx, "Curve and surface fitting with splines", Monographs on Numerical Analysis, Oxford University Press, 1993.
 
-
 use std::cmp::max;
 mod curfit;
-mod fpcurf;
 mod fpchec;
+mod fpcurf;
 mod fpdisc;
 mod fpgivs;
 //mod fpknot;
+mod fpback;
+mod fpbspl;
 mod fprati;
 mod fprota;
-mod fpbspl;
-mod fpback;
 
 /// Find the B-spline representation of a 1-D curve.
 /// Given the set of data points ``(x[i], y[i])`` determine a smooth spline
@@ -147,6 +146,55 @@ pub fn splrep(
     let tck = (t[..n].to_vec(), c[..n].to_vec(), k);
     return tck;
 }
+
+
+///  The function splev evaluates a number of points $x(i)$ with $i=1,2,...,m$
+///  a spline $s(x)$ of degree $k$, given in its b-spline representation.
+///
+///  calling sequence:
+///     call splev(t,n,c,k,x,y,m,e,ier)
+///
+///  input parameters:
+///    t    : array,length n, which contains the position of the knots.
+///    n    : integer, giving the total number of knots of s(x).
+///    c    : array,length n, which contains the b-spline coefficients.
+///    k    : integer, giving the degree of s(x).
+///    x    : array,length m, which contains the points where s(x) must
+///           be evaluated.
+///    m    : integer, giving the number of points where s(x) must be
+///           evaluated.
+///    e    : integer, if 0 the spline is extrapolated from the end
+///           spans for points not in the support, if 1 the spline
+///           evaluates to zero for those points, if 2 ier is set to
+///           1 and the subroutine returns, and if 3 the spline evaluates
+///           to the value of the nearest boundary point.
+///
+///  output parameter:
+///    y    : array,length m, giving the value of s(x) at the different
+///           points.
+///    ier  : error flag
+///      ier = 0 : normal return
+///      ier = 1 : argument out of bounds and e == 2
+///      ier =10 : invalid input data (see restrictions)
+///
+///  restrictions:
+///    m >= 1
+///--    t(k+1) <= x(i) <= x(i+1) <= t(n-k) , i=1,2,...,m-1.
+///
+///  other subroutines required: fpbspl.
+///
+///  references :
+///    de boor c  : on calculating with b-splines, j. approximation theory
+///                 6 (1972) 50-62.
+///    cox m.g.   : the numerical evaluation of b-splines, j. inst. maths
+///                 applics 10 (1972) 134-149.
+///    dierckx p. : curve and surface fitting with splines, monographs on
+///                 numerical analysis, oxford university press, 1993.
+pub fn splev() -> f64 {
+
+    return 1.0;
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -412,7 +460,7 @@ mod tests {
             0.0000000000000000e+00,
             0.0000000000000000e+00,
             0.0000000000000000e+00,
-            0.0000000000000000e+00
+            0.0000000000000000e+00,
         ];
         assert_eq!(t, t_ref);
         assert_eq!(c, c_ref);
@@ -457,7 +505,7 @@ mod tests {
             None,
             None,
         );
-        let t_ref: Vec<f64> = vec![0.,0.,0.,0.,2.5,3.5,4.5,16.,16.,16.,16.];
+        let t_ref: Vec<f64> = vec![0., 0., 0., 0., 2.5, 3.5, 4.5, 16., 16., 16., 16.];
         let c_ref: Vec<f64> = vec![
             -0.6664597168700137,
             0.3028630978060425,
@@ -469,9 +517,72 @@ mod tests {
             0.0000000000000000,
             0.0000000000000000,
             0.0000000000000000,
-            0.0000000000000000];
+            0.0000000000000000,
+        ];
         assert_eq!(t, t_ref);
         assert_eq!(c, c_ref);
         assert_eq!(k, 3);
+    }
+    /// The reference values were calculated using the SciPy interface to Fitpack
+    /// Python: 3.7.6 (conda, GCC 7.3.0), NumPy: 1.18.1, SciPy: 1.4.1
+    /// the following code was used
+    /// ```python
+    /// from scipy.interpolate import splrep
+    /// import numpy as np
+    /// x = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
+    /// y = [0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0]
+    ///
+    /// spl = splrep(x, y, k=5)
+    /// np.set_printoptions(16)
+    /// print(spl[0])
+    /// print(spl[1])
+    /// print(spl[2])
+    /// ```
+    #[test]
+    fn spline_interpolation_fifth_order() {
+        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0];
+        let y = vec![
+            0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0,
+        ];
+        let (t, c, k) = splrep(
+            x,
+            y,
+            None,
+            None,
+            None,
+            Some(5),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let t_ref: Vec<f64> = vec![
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 3., 4., 5., 6., 7., 8., 11., 11., 11., 11., 11., 11.,
+        ];
+        let c_ref: Vec<f64> = vec![
+            -3.1525642173709244e-17,
+            9.6187233587515120e-01,
+            2.2151448816620882e+00,
+            5.9694686107264907e+00,
+            1.2784814311098723e+01,
+            2.4504570963883427e+01,
+            3.5498043000268858e+01,
+            5.3701926216065736e+01,
+            7.2898267193716578e+01,
+            9.1401339513703903e+01,
+            1.0779928004881573e+02,
+            1.2100000000000000e+02,
+            0.0000000000000000e+00,
+            0.0000000000000000e+00,
+            0.0000000000000000e+00,
+            0.0000000000000000e+00,
+            0.0000000000000000e+00,
+            0.0000000000000000e+00,
+        ];
+        assert_eq!(t, t_ref);
+        assert_eq!(c, c_ref);
+        assert_eq!(k, 5);
     }
 }

@@ -1,6 +1,6 @@
 use crate::{fpback, fpbspl, fpdisc, fpgivs, fprati, fprota};
-use ndarray::Array2;
 use ndarray::prelude::*;
+use ndarray::Array2;
 use std::cmp::{max, min};
 
 pub fn fpcurf(
@@ -381,7 +381,7 @@ pub fn fpcurf(
                             f1 = f2;
                             p = p * 0.4;
                             if p >= p3 {
-                                p = p2 * 0.1 + p3 * 0.9
+                                //p = p2 * 0.1 + p3 * 0.9
                             }
                             if f2 > 0.0 {
                                 ich1 = 1
