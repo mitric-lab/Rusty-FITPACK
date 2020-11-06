@@ -15,6 +15,7 @@ pub fn curfit(
     wrk: Vec<f64>,
 ) -> (Vec<f64>, usize, Vec<f64>, f64, i8) {
     let m: usize = x.len();
+    let mut t: Vec<f64> = t;
     let n: usize = nest.clone();
     let lwrk: usize = wrk.len();
     assert!(k <= 5, "the degree k must be within 1 and 5");
@@ -40,22 +41,24 @@ pub fn curfit(
             )
         }
     }
-    assert!(
-        n >= nmin && n <= nest,
-        "total number of knots must be within nmin and nest"
-    );
-    let mut j: usize = n;
-    let mut t: Vec<f64> = t;
-    for i in 1..(k1 + 1) {
-        t[(i - 1) as usize] = xb;
-        t[j - 1] = xe;
-        j = j - 1;
+    if iopt < 0 {
+        assert!(
+            n >= nmin && n <= nest,
+            "total number of knots must be within nmin and nest"
+        );
+        let mut j: usize = n;
+        for i in 1..(k1 + 1) {
+            t[(i - 1) as usize] = xb;
+            t[j - 1] = xe;
+            j = j - 1;
+        }
+        // verify the number and position of knots
+        let ier: u8 = 0; //
+        check_knots(&x, &t, k, m, n);
+        assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
     }
-    // verify the number and position of knots
-    let ier: u8 = 0; //
-    //check_knots(&x, &t, k, m, n);
-    assert_eq!(ier, 0, "The knots dont fullfill all five conditions");
 
-    let (t, n, c, fp, ier) = fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
+    let (t, n, c, fp, ier): (Vec<f64>, usize, Vec<f64>, f64, i8) =
+        fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, k1, k2, n, t);
     return (t, n, c, fp, ier);
 }

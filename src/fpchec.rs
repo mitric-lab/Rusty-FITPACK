@@ -46,12 +46,13 @@ pub(crate) fn check_knots(x: &Vec<f64>, t: &Vec<f64>, k: usize, m: usize, n: usi
         j = j - 1;
     }
     // check condition no 3
-    for i in k1..(nk1 + 1) {
+    for i in k2..(nk2 + 1) {
         if t[i - 1] <= t[i - 2] {
             panic!(
-                "condition 3 is not satisfied. t[i-1]: {}, t[i-2]: {}",
+                "condition 3 is not satisfied. t[i-1]: {}, t[i-2]: {}, t: {:?}",
                 t[i - 1],
-                t[i - 2]
+                t[i - 2],
+                t
             );
         }
     }

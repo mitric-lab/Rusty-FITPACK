@@ -141,7 +141,7 @@ pub fn splrep(
     };
     let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
 
-    let (t, n, c, fp, ier): (Vec<f64>, usize, Vec<f64>, f64, i8) =
+    let (t, n, c, _fp, _ier): (Vec<f64>, usize, Vec<f64>, f64, i8) =
         curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t.clone(), wrk);
 
     let tck = (t[..n].to_vec(), c[..n].to_vec(), k);

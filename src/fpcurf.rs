@@ -1,4 +1,4 @@
-use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fprati, fprota};
+use crate::{fpback, fpbspl, fpdisc, fpgivs, fprati, fprota};
 use ndarray::Array2;
 use ndarray::prelude::*;
 use std::cmp::{max, min};
@@ -34,20 +34,20 @@ pub fn fpcurf(
     let nmax: usize = m + k1;
     let mut h: Vec<f64> = vec![0.0; 20];
     let mut fpms: f64 = 0.0;
-    let mut nk1: usize = n - k1;
+    let nk1: usize;
     let mut yi: f64;
-    let mut i2: usize = 1;
+    let mut i2: usize;
     let mut fp: f64 = 0.0;
 
     let mut finished: bool = false;
 
-    let mut piv: f64 = 0.0;
+    let mut piv: f64;
     let mut p: f64 = 0.0;
     let mut p1: f64 = 0.0;
-    let mut p2: f64 = 0.0;
-    let mut p3: f64 = -1.0;
-    let mut f2: f64 = 0.0;
-    let mut ich3: usize = 0;
+    let mut p2: f64;
+    let mut p3: f64;
+    let mut f2: f64;
+    let mut ich3: usize;
 
     // create arrays with Fortran (column-major) memory layout filled with zeros
     let mut a: Array2<f64> = Array2::zeros((nest, k2).f());
@@ -200,7 +200,6 @@ pub fn fpcurf(
         }
 
         // if f(p=inf) < s accept the choice of knots
-        let mut npl1: f64 = 0.0;
         if fpms >= 0.0 {
             //  if n = nmax, sinf(x) is an interpolating spline.
             // if(n.eq.nmax) go to 430
@@ -211,7 +210,7 @@ pub fn fpcurf(
                 nplus = 1;
                 ier = 0;
             } else {
-                npl1 = (nplus * 2) as f64;
+                let mut npl1: f64 = (nplus * 2) as f64;
                 let rn: f64 = nplus as f64;
                 if fpold - fp > acc {
                     npl1 = rn * fpms / (fpold - fp);
