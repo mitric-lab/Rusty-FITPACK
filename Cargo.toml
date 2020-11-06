@@ -1,5 +1,5 @@
 [package]
-name = "Rusty-FITPACK"
+name = "rusty-fitpack"
 version = "0.1.0"
 authors = ["Joscha Hoche joscha.hoche@uni-wuerzburg.de"]
 edition = "2018"

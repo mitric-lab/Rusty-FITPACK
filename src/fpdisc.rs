@@ -26,7 +26,7 @@ pub(crate) fn fpdisc(t: Vec<f64>, k2: usize, n: usize, b: Array2<f64>) -> Array2
         for j in 1..(k2 + 1) {
             let mut jk: usize = j;
             let mut prod: f64 = h[j - 1];
-            for i in 1..(k + 1) {
+            for _i in 1..(k + 1) {
                 jk = jk + 1;
                 prod = prod * h[jk - 1] * fac;
             }

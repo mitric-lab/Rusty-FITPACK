@@ -24,7 +24,7 @@ mod fpcurf;
 mod fpchec;
 mod fpdisc;
 mod fpgivs;
-mod fpknot;
+//mod fpknot;
 mod fprati;
 mod fprota;
 mod fpbspl;
@@ -37,7 +37,7 @@ mod fpback;
 /// #### Example
 /// Simple example of spline interpolation
 /// ```
-/// use Rusty_FITPACK::splrep;
+/// use rusty_fitpack::splrep;
 /// let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
 ///
@@ -414,6 +414,62 @@ mod tests {
             0.0000000000000000e+00,
             0.0000000000000000e+00
         ];
+        assert_eq!(t, t_ref);
+        assert_eq!(c, c_ref);
+        assert_eq!(k, 3);
+    }
+
+    /// The reference values were calculated using the SciPy interface to Fitpack
+    /// Python: 3.7.6 (conda, GCC 7.3.0), NumPy: 1.18.1, SciPy: 1.4.1
+    /// the following code was used
+    /// ```python
+    /// from scipy.interpolate import splrep, splev
+    /// import numpy as np
+    /// x = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
+    /// y = [0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0]
+    /// w = [0.5, 1.0, 2.0, 1.0, 2.0, 3.0, 1.0, 0.1, 8.0, 0.2, 3.0, 2.0]
+    /// t = [2.5, 3.5, 4.5]
+    /// spl = splrep(x, y, w=w, xb=0.0, xe=16.0, t=t, s=0.8)
+    /// np.set_printoptions(16)
+    /// print(spl[0])
+    /// print(spl[1])
+    /// print(spl[2])
+    /// ```
+    #[test]
+    fn spline_fit_limits_knots_weights() {
+        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0];
+        let y = vec![
+            0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0,
+        ];
+        let w: Vec<f64> = vec![0.5, 1.0, 2.0, 1.0, 2.0, 3.0, 1.0, 0.1, 8.0, 0.2, 3.0, 2.0];
+        let t: Vec<f64> = vec![2.5, 3.5, 4.5];
+        let (t, c, k) = splrep(
+            x,
+            y,
+            Some(w),
+            Some(0.0),
+            Some(16.0),
+            None,
+            None,
+            None,
+            Some(t),
+            None,
+            None,
+            None,
+        );
+        let t_ref: Vec<f64> = vec![0.,0.,0.,0.,2.5,3.5,4.5,16.,16.,16.,16.];
+        let c_ref: Vec<f64> = vec![
+            -0.6664597168700137,
+            0.3028630978060425,
+            2.7945126095902090,
+            11.928341312803433,
+            47.885102645361140,
+            133.39937455474050,
+            255.87891800341376,
+            0.0000000000000000,
+            0.0000000000000000,
+            0.0000000000000000,
+            0.0000000000000000];
         assert_eq!(t, t_ref);
         assert_eq!(c, c_ref);
         assert_eq!(k, 3);

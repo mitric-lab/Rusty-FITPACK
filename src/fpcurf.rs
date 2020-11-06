@@ -1,4 +1,4 @@
-use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fpknot, fprati, fprota};
+use crate::{fpback, fpbspl, fpchec, fpdisc, fpgivs, fprati, fprota};
 use ndarray::Array2;
 use ndarray::prelude::*;
 use std::cmp::{max, min};
@@ -141,7 +141,7 @@ pub fn fpcurf(
                 l = l + 1;
             }
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
-            h = fpbspl::fbspl(xi, &t, k, n, l, h.clone());
+            h = fpbspl::fbspl(xi, &t, k, l, h.clone());
             for i in 1..(k1 + 1) {
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
@@ -275,7 +275,6 @@ pub fn fpcurf(
     let rn: usize = nk1;
     p = rn as f64 / p;
     let mut ich1: usize = 0;
-    let ich2: usize = 0;
     ich3 = 0;
     let n8: usize = n - nmin;
     if finished == false {
