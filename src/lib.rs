@@ -18,6 +18,8 @@
 //! [4] P. Dierckx, "Curve and surface fitting with splines", Monographs on Numerical Analysis, Oxford University Press, 1993.
 
 use std::cmp::max;
+use crate::fpbspl::fpbspl;
+
 mod curfit;
 mod fpchec;
 mod fpcurf;
@@ -147,7 +149,6 @@ pub fn splrep(
     return tck;
 }
 
-/// #### NOT WORKING YET
 ///  The function `splev` evaluates a number of points $x(i)$ with $i=1,2,...,m$
 ///  a spline $s(x)$ of degree $k$, given in its B-spline representation.
 ///
@@ -178,19 +179,18 @@ pub fn splrep(
 ///  [1]  De Boor, C. On calculating with B-splines, J. Approximation Theory, 6 (1972) 50-62.<br>
 ///  [2]  Cox, M.G., The numerical evaluation of B-splines, J. Inst. Maths Applics 10 (1972) 134-149.<br>
 ///  [3]  Dierckx, P. Curve and Surface fitting with splines, Monographs on Numerical Analysis, Oxford University Press, 1993. <br>
-pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>) -> Vec<f64> {
-    let h: [f64; 20] = [0.0; 20];
+pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>, e:usize) -> Vec<f64> {
     let mut y: Vec<f64> = vec![0.0; x.len()];
 
     let k1: usize = k + 1;
     let k2: usize = k1 + 1;
     let nk1: usize = t.len() - k1;
-    let tb: f64 = t[k - 1];
+    let tb: f64 = t[k1 - 1];
     let te: f64 = t[nk1];
     let mut l: usize = k1;
     let mut l1: usize = l + 1;
     // main loop for different points
-    for i in 1..(m+1) {
+    for i in 1..(x.len()+1) {
         // fetch a new x-value
         let mut arg: f64 = x[i-1];
         if arg < tb && e == 3 {
@@ -199,24 +199,26 @@ pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>) -> Vec<f64> {
             arg = te;
         }
         // search for knot interval t(l) <= arg < t(l+1)
-        while arg < t[l-1] && l1 == k2 {
+        while arg < t[l-1] && l1 != k2 {
             l1 = l;
             l = l -1;
         }
-        while arg >= t[l1-1] && l == nk1 {
+        while arg >= t[l1-1] && l != nk1 {
             l = l1;
             l1 = l + 1;
         }
         // evaluate the non-zero b-splines at arg
         // call fpbspl
+        let h: Vec<f64> = fpbspl(arg, &t, k, l);
         // find the value of s(x) at x = arg
         let mut sp: f64 = 0.0;
-        let mut ll: usize = l - 1;
+        let mut ll: usize = l - k1;
+        println!("ll : {}", ll);
         for j in 1..(k1+1) {
             ll = ll + 1;
             sp = sp + c[ll-1] * h[j-1];
         }
-        y[i] = sp;
+        y[i-1] = sp;
     }
 
     return y;
@@ -225,7 +227,7 @@ pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>) -> Vec<f64> {
 
 #[cfg(test)]
 mod tests {
-    use crate::splrep;
+    use crate::{splrep, splev};
     /// The reference values were calculated using the SciPy interface to Fitpack
     /// Python: 3.7.6 (conda, GCC 7.3.0), NumPy: 1.18.1, SciPy: 1.4.1
     /// the following code was used
@@ -612,4 +614,70 @@ mod tests {
         assert_eq!(c, c_ref);
         assert_eq!(k, 5);
     }
+
+    ///from scipy.interpolate import splrep, splev
+    // import numpy as np
+    // x = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
+    // y = [0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0]
+    // spl = splrep(x, y)
+    // #spl = splrep(x, y, w=w, xb=0.0, xe=16.0, t=t, s=0.8)
+    // np.set_printoptions(16)
+    // x_ev = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    // print(splev(x_ev, spl))
+    #[test]
+    fn simple_spline_int_evaluation() {
+        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0];
+        let y = vec![
+            0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0,
+        ];
+        let (t, c, k) = splrep(
+            x, y, None, None, None, None, None, None, None, None, None, None,
+        );
+        let x_ev: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+        let y_ev: Vec<f64> = splev(t, c, k, x_ev, 0);
+
+        let y_ev_ref: Vec<f64> = vec![
+            1.0000000000000000,
+            2.2886751346026550,
+            4.0000000000000000,
+            6.2396370288907080,
+            9.0000000000000000,
+            12.252776749834513,
+            16.000000000000000];
+        assert_eq!(y_ev, y_ev_ref);
+    }
+
+    #[test]
+    fn simple_spline_fit_evaluation() {
+        let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0];
+        let y = vec![
+            0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0, 81.0, 100.0, 121.0,
+        ];
+        let (t, c, k) = splrep(
+            x,
+            y,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(0.5),
+            None,
+            None,
+            None,
+            None,
+        );
+        let x_ev: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+        let y_ev: Vec<f64> = splev(t, c, k, x_ev, 0);
+        let y_ev_ref: Vec<f64> = vec![
+            0.8949255652788439,
+            2.1846839913312492,
+            3.9661226253216117,
+            6.2400399503943280,
+            9.0072344496937950,
+            12.268504606364406,
+            16.024648903550563];
+        assert_eq!(y_ev, y_ev_ref);
+    }
+
 }

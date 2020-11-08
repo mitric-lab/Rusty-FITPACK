@@ -141,7 +141,7 @@ pub fn fpcurf(
                 l = l + 1;
             }
             // evaluate the (k+1) non-zero b-splines at xi and store them in q
-            h = fpbspl::fbspl(xi, &t, k, l, h.clone());
+            h = fpbspl::fpbspl(xi, &t, k, l);
             for i in 1..(k1 + 1) {
                 q[[it - 1, i - 1]] = h[i - 1];
                 h[i - 1] = h[i - 1] * wi;
