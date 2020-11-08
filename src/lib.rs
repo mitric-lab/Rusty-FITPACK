@@ -152,7 +152,19 @@ pub fn splrep(
 ///  The function `splev` evaluates a number of points $x(i)$ with $i=1,2,...,m$
 ///  a spline $s(x)$ of degree $k$, given in its B-spline representation.
 ///
+/// #### Example
+/// Simple example of spline interpolation and evaluation
+/// ```
+/// use rusty_fitpack::{splrep,splev};
+/// let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
 ///
+/// let (t, c, k) = splrep(x, y, None, None, None, None, None, None, None, None, None, None);
+///
+/// // the points where we want to evaluate the spline
+/// let x_evaluate: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+/// let y_from_spline: Vec<f64> = splev(t, c, k, x_evaluate, 0);
+/// ```
 ///  Arguments:
 ///  ----------
 ///    `t`  : position of the knots. <br>
