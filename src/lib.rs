@@ -178,9 +178,48 @@ pub fn splrep(
 ///  [1]  De Boor, C. On calculating with B-splines, J. Approximation Theory, 6 (1972) 50-62.<br>
 ///  [2]  Cox, M.G., The numerical evaluation of B-splines, J. Inst. Maths Applics 10 (1972) 134-149.<br>
 ///  [3]  Dierckx, P. Curve and Surface fitting with splines, Monographs on Numerical Analysis, Oxford University Press, 1993. <br>
-pub fn splev() -> f64 {
+pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>) -> Vec<f64> {
+    let h: [f64; 20] = [0.0; 20];
+    let mut y: Vec<f64> = vec![0.0; x.len()];
 
-    return 1.0;
+    let k1: usize = k + 1;
+    let k2: usize = k1 + 1;
+    let nk1: usize = t.len() - k1;
+    let tb: f64 = t[k - 1];
+    let te: f64 = t[nk1];
+    let mut l: usize = k1;
+    let mut l1: usize = l + 1;
+    // main loop for different points
+    for i in 1..(m+1) {
+        // fetch a new x-value
+        let mut arg: f64 = x[i-1];
+        if arg < tb && e == 3 {
+            arg = tb;
+        } else if arg > te && e == 3 {
+            arg = te;
+        }
+        // search for knot interval t(l) <= arg < t(l+1)
+        while arg < t[l-1] && l1 == k2 {
+            l1 = l;
+            l = l -1;
+        }
+        while arg >= t[l1-1] && l == nk1 {
+            l = l1;
+            l1 = l + 1;
+        }
+        // evaluate the non-zero b-splines at arg
+        // call fpbspl
+        // find the value of s(x) at x = arg
+        let mut sp: f64 = 0.0;
+        let mut ll: usize = l - 1;
+        for j in 1..(k1+1) {
+            ll = ll + 1;
+            sp = sp + c[ll-1] * h[j-1];
+        }
+        y[i] = sp;
+    }
+
+    return y;
 }
 
 
