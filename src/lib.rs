@@ -1,7 +1,7 @@
 //! Rusty FITPACK provides the 1D routines for spline interpolation and fitting
 //! in Rust. The functions are translated from the original Fortran77 code [FITPACK](http://www.netlib.org/dierckx) by Paul Dierckx.
 //! This packages provides almost the same interface as the [SciPy](http://www.scipy.org) wrapper for FITPACK.
-//! In concrete terms, the package implements the two functions, `splrep` and `splev` (not yet supported).
+//! In concrete terms, the package implements the two functions, `splrep` and `splev`.
 //!
 //!
 //!
