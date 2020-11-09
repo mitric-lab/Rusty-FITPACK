@@ -17,8 +17,8 @@
 //!
 //! [4] P. Dierckx, "Curve and surface fitting with splines", Monographs on Numerical Analysis, Oxford University Press, 1993.
 
-use std::cmp::max;
 use crate::fpbspl::fpbspl;
+use std::cmp::max;
 
 mod curfit;
 mod fpchec;
@@ -191,7 +191,7 @@ pub fn splrep(
 ///  [1]  De Boor, C. On calculating with B-splines, J. Approximation Theory, 6 (1972) 50-62.<br>
 ///  [2]  Cox, M.G., The numerical evaluation of B-splines, J. Inst. Maths Applics 10 (1972) 134-149.<br>
 ///  [3]  Dierckx, P. Curve and Surface fitting with splines, Monographs on Numerical Analysis, Oxford University Press, 1993. <br>
-pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>, e:usize) -> Vec<f64> {
+pub fn splev(t: Vec<f64>, c: Vec<f64>, k: usize, x: Vec<f64>, e: usize) -> Vec<f64> {
     let mut y: Vec<f64> = vec![0.0; x.len()];
 
     let k1: usize = k + 1;
@@ -202,20 +202,20 @@ pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>, e:usize) -> Vec<f64> 
     let mut l: usize = k1;
     let mut l1: usize = l + 1;
     // main loop for different points
-    for i in 1..(x.len()+1) {
+    for i in 1..(x.len() + 1) {
         // fetch a new x-value
-        let mut arg: f64 = x[i-1];
+        let mut arg: f64 = x[i - 1];
         if arg < tb && e == 3 {
             arg = tb;
         } else if arg > te && e == 3 {
             arg = te;
         }
         // search for knot interval t(l) <= arg < t(l+1)
-        while arg < t[l-1] && l1 != k2 {
+        while arg < t[l - 1] && l1 != k2 {
             l1 = l;
-            l = l -1;
+            l = l - 1;
         }
-        while arg >= t[l1-1] && l != nk1 {
+        while arg >= t[l1 - 1] && l != nk1 {
             l = l1;
             l1 = l + 1;
         }
@@ -225,21 +225,93 @@ pub fn splev(t:Vec<f64>, c:Vec<f64>, k:usize, x: Vec<f64>, e:usize) -> Vec<f64> 
         // find the value of s(x) at x = arg
         let mut sp: f64 = 0.0;
         let mut ll: usize = l - k1;
-        println!("ll : {}", ll);
-        for j in 1..(k1+1) {
+        for j in 1..(k1 + 1) {
             ll = ll + 1;
-            sp = sp + c[ll-1] * h[j-1];
+            sp = sp + c[ll - 1] * h[j - 1];
         }
-        y[i-1] = sp;
+        y[i - 1] = sp;
     }
-
     return y;
 }
 
+///  The function `splev_uniform` evaluates a single point $x$ of
+///  a spline $s(x)$ of degree $k$, given in its B-spline representation. The functions
+///  assumes that the knots `t` are spaced uniformly so that the interval $t_i <= x < t_(i+1)$
+///  can be found without iterating over all knots
+///
+///  This function was originally written in Fortran90 by Alexander Humeniuk (Author of DFTBaby) as
+///  a modified subroutine of the splev subroutine by Paul Dierckx.
+///
+/// #### Example
+/// Simple example of spline interpolation and evaluation
+/// ```
+/// use rusty_fitpack::{splrep, splev, splev_uniform};
+/// let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
+///
+/// let (t, c, k) = splrep(x, y, None, None, None, None, None, None, None, None, None, None);
+///
+/// // the points where we want to evaluate the spline
+/// let x_evaluate: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+/// let mut y_from_spline: Vec<f64> = Vec::new();
+/// for value in x_evaluate.iter() {
+///     y_from_spline.push(splev_uniform(&t, &c, k, *value));
+/// }
+/// ```
+///  Arguments:
+///  ----------
+///    `t`  : position of the knots. <br>
+///    `c`    : b-spline coefficients. <br>
+///    `k`    : the degree of $s(x)$. <br>
+///    `x`    : point where $s(x)$ must be evaluated. <br>
+///
+///  Output:
+///  ----------
+///    `y`    : the value of s(x) at the point x.<br>
+///
+pub fn splev_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64) -> f64 {
+    let k1: usize = k + 1;
+    let nk1: usize = t.len() - k1;
+    let tb: f64 = t[k1 - 1];
+    let te: f64 = t[nk1];
+    let mut l: usize = 0;
+    // fetch a new x-value
+    let mut arg: f64;
+    // search for knot interval t(l) <= arg < t(l+1)
+    if x <= tb {
+        arg = tb;
+        l = k1;
+    } else if x >= te {
+        arg = te;
+        l = nk1;
+    } else {
+        arg = x;
+        // find interval such that t(l) <= x < t(l+1)
+        let dt: f64 = t[k1 + 1] - t[k1]; // uniform distance between knots
+        if dt != 0.0 {
+            l = ((x - t[0]) / dt) as usize + k;
+        }
+    }
+    if l <= k {
+        l = k1;
+    }
+    // If l < k, we divide by zero because the interpolating points t[0..k] = 0.0
+    // evaluate the non-zero b-splines at arg
+    // call fpbspl
+    let h: Vec<f64> = fpbspl(arg, &t, k, l);
+    // find the value of s(x) at x = arg
+    let mut y: f64 = 0.0;
+    let mut ll: usize = l - k1;
+    for j in 1..(k1 + 1) {
+        ll = ll + 1;
+        y = y + c[ll - 1] * h[j - 1];
+    }
+    return y;
+}
 
 #[cfg(test)]
 mod tests {
-    use crate::{splrep, splev};
+    use crate::{splev, splev_uniform, splrep};
     /// The reference values were calculated using the SciPy interface to Fitpack
     /// Python: 3.7.6 (conda, GCC 7.3.0), NumPy: 1.18.1, SciPy: 1.4.1
     /// the following code was used
@@ -655,7 +727,8 @@ mod tests {
             6.2396370288907080,
             9.0000000000000000,
             12.252776749834513,
-            16.000000000000000];
+            16.000000000000000,
+        ];
         assert_eq!(y_ev, y_ev_ref);
     }
 
@@ -688,8 +761,45 @@ mod tests {
             6.2400399503943280,
             9.0072344496937950,
             12.268504606364406,
-            16.024648903550563];
+            16.024648903550563,
+        ];
         assert_eq!(y_ev, y_ev_ref);
     }
 
+    #[test]
+    fn spline_interpolation_evaluation_uniform() {
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0];
+        let y = vec![
+            1.0, 4.0, 7.0, 18.0, 22.0, 41.0, 45.0, 63.0, 80.0, 99.0, 119.0,
+        ];
+        let (t, c, k) = splrep(
+            x,
+            y,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+
+        let x_ev: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+        let mut y_ev: Vec<f64> = Vec::new();
+        for value in x_ev.iter() {
+            y_ev.push(splev_uniform(&t, &c, k, *value));
+        }
+        let y_ev_ref: Vec<f64> = vec![
+            1.0000000000000002,
+            3.6369718796023560,
+            4.0000000000000010,
+            4.3630281203976470,
+            7.0000000000000030,
+            12.910915638807067,
+            17.999999999999996];
+        assert_eq!(y_ev, y_ev_ref);
+    }
 }
