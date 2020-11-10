@@ -292,12 +292,13 @@ pub fn splev_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64) -> f64 {
             l = ((x - t[0]) / dt) as usize + k;
         }
     }
+    // If l < k, we divide by zero because the interpolating points t[0..k] = 0.0
     if l <= k {
         l = k1;
+    } else if l > nk1 {
+        l = nk1;
     }
-    // If l < k, we divide by zero because the interpolating points t[0..k] = 0.0
     // evaluate the non-zero b-splines at arg
-    // call fpbspl
     let h: Vec<f64> = fpbspl(arg, &t, k, l);
     // find the value of s(x) at x = arg
     let mut y: f64 = 0.0;
@@ -787,7 +788,7 @@ mod tests {
             None,
         );
 
-        let x_ev: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+        let x_ev: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 7.5, 10.5, 10.9, 11.0];
         let mut y_ev: Vec<f64> = Vec::new();
         for value in x_ev.iter() {
             y_ev.push(splev_uniform(&t, &c, k, *value));
@@ -799,7 +800,11 @@ mod tests {
             4.3630281203976470,
             7.0000000000000030,
             12.910915638807067,
-            17.999999999999996];
+            17.999999999999996,
+            52.585943252945510,
+            109.16264152245950,
+            117.08616453424153,
+            119.00000000000000];
         assert_eq!(y_ev, y_ev_ref);
     }
 }
