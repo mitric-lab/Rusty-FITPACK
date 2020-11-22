@@ -143,7 +143,7 @@ pub fn splrep(
     let wrk: Vec<f64> = vec![0.0; m * (k + 1) + nest * (7 + 3 * k)];
 
     let (t, n, c, _fp, _ier): (Vec<f64>, usize, Vec<f64>, f64, i8) =
-        curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t.clone(), wrk);
+        curfit::curfit(task, x, y, w, xb, xe, k, s, nest, t, wrk);
 
     let tck = (t[..n].to_vec(), c[..n].to_vec(), k);
     return tck;
@@ -276,7 +276,7 @@ pub fn splev_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64) -> f64 {
     let te: f64 = t[nk1];
     let mut l: usize = 0;
     // fetch a new x-value
-    let mut arg: f64;
+    let arg: f64;
     // search for knot interval t(l) <= arg < t(l+1)
     if x <= tb {
         arg = tb;
