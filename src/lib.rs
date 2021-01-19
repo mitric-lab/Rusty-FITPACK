@@ -246,7 +246,7 @@ pub fn splev(t: Vec<f64>, c: Vec<f64>, k: usize, x: Vec<f64>, e: usize) -> Vec<f
 /// Simple example of spline interpolation and evaluation
 /// ```
 /// use rusty_fitpack::{splrep, splev, splev_uniform};
-/// let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// let x = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
 /// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
 ///
 /// let (t, c, k) = splrep(x, y, None, None, None, None, None, None, None, None, None, None);
@@ -308,6 +308,75 @@ pub fn splev_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64) -> f64 {
         y = y + c[ll - 1] * h[j - 1];
     }
     return y;
+}
+
+/// Function splder_uniform evaluates in a point x the derivative of order nu of a spline s(x)
+//  of degree k given in its b-spline representation.
+pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu:usize) -> f64 {
+    //  before starting computations a data check is made. if the input data
+    //  are invalid control is immediately repassed to the calling program.
+    let ier:usize = 0;
+    assert!(nu >= 0 && nu <= k, "The order of derivative is outside 0 - k");
+
+    n: usize = t.len();
+    let k1: usize = k + 1;
+    let nk1: usize = n - k1;
+    let tb: f64 = t[k];
+    let te: f64 = t[nk1];
+    // the derivative of order nu of a spline of degree k is a spline of degree k - nu,
+    // the b-spline coefficients wrk(i) of which can be found using the recurrence scheme
+    // of de boor
+    let mut l: usize = 1;
+    let mut kk: usize = k;
+    let nn: usize = n;
+    for i in 0..nk1-1 {
+
+    }
+    if nu != 0 {
+        let mut nk2: usize = nk1;
+        for j in 0..nk2-1 {
+            let ak: usize = kk;
+            nk2 -= 1;
+            let mut l1: usize = l;
+            for i in 0..nk2-1 {
+                l1 = l1 + 1;
+                let l2: usize = l1 + kk;
+                let fac: f64 = t[l2 - 1] - t[l1 - 1];
+                if fac > 0.0 {
+                    // wrk(i) = ak*(wrk(i+1)-wrk(i))/fac
+                }
+            }
+            l += 1;
+            kk -= 1;
+        }
+        if kk == 0 {
+            // if nu = k the derivative is a piecewise constant function
+            let mut j:usize = 0;
+            while x >= t[l] && l != nk1 {
+                l += 1;
+                j += 1;
+            }
+            // y(i) = wrk(j)
+            // go to 200
+        }
+        // main block
+        let mut arg: f64 = {
+            if x < tb {tb}
+            else if x > te {te}
+            else {x}
+        };
+        // search for knot interval t(l) <= arg < t(l+1)
+
+        l += 1;
+        kk -= 1;
+
+
+    }
+
+
+
+    return 1.0
+
 }
 
 #[cfg(test)]
