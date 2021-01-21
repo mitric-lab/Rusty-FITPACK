@@ -310,14 +310,52 @@ pub fn splev_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64) -> f64 {
     return y;
 }
 
-/// Function splder evaluates in a number of points x(i),i=1,2,...,m the derivative of order nu
-/// of a spline s(x) of degree k given in its b-spline representation.
+///  The function `splder` evaluates a number of points $x(i)$ with $i=1,2,...,m$
+///  the derivative of order nu of a spline $s(x)$ of degree $k$, given in its
+///  B-spline representation.
+///
+/// #### Example
+/// Simple example of spline interpolation and evaluation of the first derivative
+/// ```
+/// use rusty_fitpack::{splrep, splder};
+/// let x = vec![0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
+///
+/// let (t, c, k) = splrep(x, y, None, None, None, None, None, None, None, None, None, None);
+///
+/// // the points where we want to evaluate the spline
+/// let x_evaluate: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+/// let y_from_spline: Vec<f64> = splder(&t, &c, k, &x_evaluate, 1);
+/// ```
+///  Arguments:
+///  ----------
+///    `t`  : position of the knots. <br>
+///    `c`    : b-spline coefficients. <br>
+///    `k`    : the degree of $s(x)$. <br>
+///    `x`    : points where $s(x)$ must be evaluated. <br>
+///    `nu`   : order of derivative <br>
+///
+///  Output:
+///  ----------
+///    `y`    : the value of s(x) at the different points.<br>
+///
+///  Restrictions:
+///  ----------
+///   $m >= 1$<br> <br>
+///   $t(k+1) <= x(i) <= x(i+1) <= t(n-k)$ with  $i = 1, 2,...,m-1$<br> <br>
+///   $ 0 <= \nu <= k$
+///
+///  References
+///  ----------
+///  [1]  De Boor, C. On calculating with B-splines, J. Approximation Theory, 6 (1972) 50-62.<br>
+///  [2]  Cox, M.G., The numerical evaluation of B-splines, J. Inst. Maths Applics 10 (1972) 134-149.<br>
+///  [3]  Dierckx, P. Curve and Surface fitting with splines, Monographs on Numerical Analysis, Oxford University Press, 1993. <br>
 pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> Vec<f64> {
     //  before starting computations a data check is made. if the input data
     //  are invalid control is immediately repassed to the calling program.
     assert!(nu >= 0 && nu <= k, "The order of derivative is outside 0 - k");
 
-    n: usize = t.len();
+    let n: usize = t.len();
     let k1: usize = k + 1;
     let nk1: usize = n - k1;
     let tb: f64 = t[k];
@@ -327,6 +365,7 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
     // of de boor
     let mut l: usize = 1;
     let mut l1: usize = l;
+    let mut ll: usize;
     let mut kk: usize = k;
     let nn: usize = n;
     // copy the b-spline coefficients
@@ -337,11 +376,11 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
 
     if nu != 0 {
         let mut nk2: usize = nk1;
-        for j in 0..nu-1 {
-            let ak: usize = kk;
+        for j in 0..nu {
+            let ak: f64 = kk as f64;
             nk2 -= 1;
             l1 = l;
-            for i in 0..nk2-1 {
+            for i in 0..nk2 {
                 l1 += 1;
                 let l2: usize = l1 + kk;
                 let fac: f64 = t[l2 - 1] - t[l1 - 1];
@@ -367,7 +406,7 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
     }
     l = k1;
     l1 = l + 1;
-    k2 = k1 - nu;
+    let k2: usize = k1 - nu;
     if kk > 0 {
         // main loop
         //  we have to evaluate a spline of degree k - nu
@@ -385,9 +424,9 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
             // find the value of the derivative at x=arg
             let mut sp: f64 = 0.0;
             ll = l - k1;
-            for j in 0..k2 - 1 {
+            for j in 0..k2 {
                 ll = ll + 1;
-                sp = sp + wrk[ll - 1] * h[j - 1];
+                sp = sp + wrk[ll - 1] * h[j];
             }
             y.push(sp);
         }
@@ -396,14 +435,49 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
 }
 
 
-/// Function splder_uniform evaluates in a point x the derivative of order nu of a spline s(x)
-//  of degree k given in its b-spline representation.
+/// The function `splder_uniform` evaluates in a point x the derivative of order nu of a spline
+/// $s(x)$ of degree $k$, given in its of degree k given in its B-spline representation.
+///
+/// #### Example
+/// Simple example of spline interpolation and evaluation of the first derivative
+/// ```
+/// use rusty_fitpack::{splrep, splder_uniform};
+/// let x = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+/// let y = vec![0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 36.0, 49.0, 64.0];
+///
+/// let (t, c, k) = splrep(x, y, None, None, None, None, None, None, None, None, None, None);
+///
+/// // the points where we want to evaluate the spline
+/// let x_evaluate: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+/// let mut y_from_spline: Vec<f64> = Vec::new();
+/// for value in x_evaluate.iter() {
+///     y_from_spline.push(splder_uniform(&t, &c, k, *value, 1));
+/// }
+/// ```
+///  Arguments:
+///  ----------
+///    `t`    : position of the knots. <br>
+///    `c`    : b-spline coefficients. <br>
+///    `k`    : the degree of $s(x)$. <br>
+///    `x`    : point where $s(x)$ must be evaluated. <br>
+///    `nu`   : order of derivative <br>
+///
+///  Output:
+///  ----------
+///    `y`    : the value of s(x) at the different points.<br>
+///
+///  Restrictions:
+///  ----------
+///   $m >= 1$<br> <br>
+///   $t(k+1) <= x(i) <= x(i+1) <= t(n-k)$ with  $i = 1, 2,...,m-1$<br> <br>
+///   $ 0 <= \nu <= k$
+///
 pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu:usize) -> f64 {
     //  before starting computations a data check is made. if the input data
     //  are invalid control is immediately repassed to the calling program.
     assert!(nu >= 0 && nu <= k, "The order of derivative is outside 0 - k");
 
-    n: usize = t.len();
+    let n: usize = t.len();
     let k1: usize = k + 1;
     let nk1: usize = n - k1;
     let tb: f64 = t[k];
@@ -412,25 +486,27 @@ pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu:usize) ->
     // the b-spline coefficients wrk(i) of which can be found using the recurrence scheme
     // of de boor
     let mut l: usize = 1;
+    let mut l1: usize = l;
+    let mut ll: usize;
     let mut kk: usize = k;
     let nn: usize = n;
     // copy the b-spline coefficients
     let mut wrk: Vec<f64> = c.clone();
-
+    let mut arg: f64 = 0.0;
     let mut y: f64 = 0.0;
 
     if nu != 0 {
         let mut nk2: usize = nk1;
-        for j in 0..nk2-1 {
-            let ak: usize = kk;
+        for j in 0..nu {
+            let ak: f64 = kk as f64;
             nk2 -= 1;
             let mut l1: usize = l;
-            for i in 0..nk2-1 {
+            for i in 0..nk2 {
                 l1 = l1 + 1;
                 let l2: usize = l1 + kk;
                 let fac: f64 = t[l2 - 1] - t[l1 - 1];
                 if fac > 0.0 {
-                    wrk[i] = ak * (wrk[i+1] - wrk[i]) / fac
+                    wrk[i] = ak * (wrk[i + 1] - wrk[i]) / fac
                 }
             }
             l += 1;
@@ -438,36 +514,52 @@ pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu:usize) ->
         }
         if kk == 0 {
             // if nu = k the derivative is a piecewise constant function
-            let mut j:usize = 0;
+            let mut j: usize = 0;
             while x >= t[l] && l != nk1 {
                 l += 1;
                 j += 1;
             }
             y = wrk[j - 1]
-        } else {
+        }
+    }
+    l = k1;
+    l1 = l + 1;
+    let k2: usize = k1 - nu;
+    if kk > 0 {
             // if not then we have to evaluate a spline of degree k - nu
-            let mut arg: f64 = {
-                if x < tb {tb}
-                else if x > te {te}
-                else {x}
-            };
             // search for knot interval t(l) <= arg < t(l+1)
-            while arg >= t[l1 -1] && l != nk1 {
-                l = l1;
-                l1 = l + 1;
+            if x <= tb {
+                arg = tb;
+                l = k1;
+            } else if x >= te {
+                arg = te;
+                l = nk1;
+            } else {
+                arg = x;
+                // find interval such that t(l) <= x < t(l+1)
+                let dt: f64 = t[k1 + 1] - t[k1]; // uniform distance between knots
+                if dt != 0.0 {
+                    l = ((x - t[0]) / dt) as usize + k;
+                }
+            }
+            // If l < k, we divide by zero because the interpolating points t[0..k] = 0.0
+            if l <= kk {
+                l = k1 - nu;
+            } else if l > nk1 {
+                l = nk1;
             }
             // evaluate the non-zero b-splines at arg
             let h: Vec<f64> = fpbspl(arg, &t, kk, l);
             // find the value of the derivative at x=arg
             let mut sp: f64 = 0.0;
             ll = l - k1;
-            for j in 0..k2-1{
+            for j in 0..k2{
                 ll = ll +1;
-                sp = sp + wrk[ll-1] * h[j-1];
+                sp = sp + wrk[ll-1] * h[j];
             }
             y = sp;
-        }
     }
+
     return y;
 }
 
