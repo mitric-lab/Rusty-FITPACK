@@ -1,8 +1,14 @@
 [package]
 name = "rusty-fitpack"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Joscha Hoche joscha.hoche@uni-wuerzburg.de"]
-edition = "2018"
+edition = "2021"
+repository = "https://github.com/mitric-lab/Rusty-FITPACK"
+license = "GPL-3.0"
+license-file = "LICENSE"
+readme = "README.md"
+description = "1D routines for spline interpolation and fitting"
+keywords = ["FITPACK", "spline", "interpolation"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
