@@ -27,7 +27,7 @@ mod fpdisc;
 mod fpgivs;
 //mod fpknot;
 mod fpback;
-mod fpbspl;
+pub mod fpbspl;
 mod fprati;
 mod fprota;
 
@@ -350,10 +350,13 @@ pub fn splev_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64) -> f64 {
 ///  [1]  De Boor, C. On calculating with B-splines, J. Approximation Theory, 6 (1972) 50-62.<br>
 ///  [2]  Cox, M.G., The numerical evaluation of B-splines, J. Inst. Maths Applics 10 (1972) 134-149.<br>
 ///  [3]  Dierckx, P. Curve and Surface fitting with splines, Monographs on Numerical Analysis, Oxford University Press, 1993. <br>
-pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> Vec<f64> {
+pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu: usize) -> Vec<f64> {
     //  before starting computations a data check is made. if the input data
     //  are invalid control is immediately repassed to the calling program.
-    assert!(nu >= 0 && nu <= k, "The order of derivative is outside 0 - k");
+    assert!(
+        nu >= 0 && nu <= k,
+        "The order of derivative is outside 0 - k"
+    );
 
     let n: usize = t.len();
     let k1: usize = k + 1;
@@ -385,7 +388,7 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
                 let l2: usize = l1 + kk;
                 let fac: f64 = t[l2 - 1] - t[l1 - 1];
                 if fac > 0.0 {
-                    wrk[i] = ak * (wrk[i+1] - wrk[i]) / fac
+                    wrk[i] = ak * (wrk[i + 1] - wrk[i]) / fac
                 }
             }
             l += 1;
@@ -393,7 +396,7 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
         }
         if kk == 0 {
             // if nu = k the derivative is a piecewise constant function
-            let mut j:usize = 0;
+            let mut j: usize = 0;
             for i in 0..m {
                 arg = x[i];
                 while arg >= t[l] && l != nk1 {
@@ -412,7 +415,13 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
         //  we have to evaluate a spline of degree k - nu
         for i in 0..m {
             arg = {
-                if x[i] < tb { tb } else if x[i] > te { te } else { x[i] }
+                if x[i] < tb {
+                    tb
+                } else if x[i] > te {
+                    te
+                } else {
+                    x[i]
+                }
             };
             // search for knot interval t(l) <= arg < t(l+1)
             while arg >= t[l1 - 1] && l != nk1 {
@@ -433,7 +442,6 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
     }
     return y;
 }
-
 
 /// The function `splder_uniform` evaluates in a point x the derivative of order nu of a spline
 /// $s(x)$ of degree $k$, given in its of degree k given in its B-spline representation.
@@ -472,10 +480,13 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu:usize) -> V
 ///   $t(k+1) <= x(i) <= x(i+1) <= t(n-k)$ with  $i = 1, 2,...,m-1$<br> <br>
 ///   $ 0 <= \nu <= k$
 ///
-pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu:usize) -> f64 {
+pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu: usize) -> f64 {
     //  before starting computations a data check is made. if the input data
     //  are invalid control is immediately repassed to the calling program.
-    assert!(nu >= 0 && nu <= k, "The order of derivative is outside 0 - k");
+    assert!(
+        nu >= 0 && nu <= k,
+        "The order of derivative is outside 0 - k"
+    );
 
     let n: usize = t.len();
     let k1: usize = k + 1;
@@ -526,38 +537,38 @@ pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu:usize) ->
     l1 = l + 1;
     let k2: usize = k1 - nu;
     if kk > 0 {
-            // if not then we have to evaluate a spline of degree k - nu
-            // search for knot interval t(l) <= arg < t(l+1)
-            if x <= tb {
-                arg = tb;
-                l = k1;
-            } else if x >= te {
-                arg = te;
-                l = nk1;
-            } else {
-                arg = x;
-                // find interval such that t(l) <= x < t(l+1)
-                let dt: f64 = t[k1 + 1] - t[k1]; // uniform distance between knots
-                if dt != 0.0 {
-                    l = ((x - t[0]) / dt) as usize + k;
-                }
+        // if not then we have to evaluate a spline of degree k - nu
+        // search for knot interval t(l) <= arg < t(l+1)
+        if x <= tb {
+            arg = tb;
+            l = k1;
+        } else if x >= te {
+            arg = te;
+            l = nk1;
+        } else {
+            arg = x;
+            // find interval such that t(l) <= x < t(l+1)
+            let dt: f64 = t[k1 + 1] - t[k1]; // uniform distance between knots
+            if dt != 0.0 {
+                l = ((x - t[0]) / dt) as usize + k;
             }
-            // If l < k, we divide by zero because the interpolating points t[0..k] = 0.0
-            if l <= kk {
-                l = k1 - nu;
-            } else if l > nk1 {
-                l = nk1;
-            }
-            // evaluate the non-zero b-splines at arg
-            let h: Vec<f64> = fpbspl(arg, &t, kk, l);
-            // find the value of the derivative at x=arg
-            let mut sp: f64 = 0.0;
-            ll = l - k1;
-            for j in 0..k2{
-                ll = ll +1;
-                sp = sp + wrk[ll-1] * h[j];
-            }
-            y = sp;
+        }
+        // If l < k, we divide by zero because the interpolating points t[0..k] = 0.0
+        if l <= kk {
+            l = k1 - nu;
+        } else if l > nk1 {
+            l = nk1;
+        }
+        // evaluate the non-zero b-splines at arg
+        let h: Vec<f64> = fpbspl(arg, &t, kk, l);
+        // find the value of the derivative at x=arg
+        let mut sp: f64 = 0.0;
+        ll = l - k1;
+        for j in 0..k2 {
+            ll = ll + 1;
+            sp = sp + wrk[ll - 1] * h[j];
+        }
+        y = sp;
     }
 
     return y;
@@ -1027,18 +1038,7 @@ mod tests {
             1.0, 4.0, 7.0, 18.0, 22.0, 41.0, 45.0, 63.0, 80.0, 99.0, 119.0,
         ];
         let (t, c, k) = splrep(
-            x,
-            y,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
+            x, y, None, None, None, None, None, None, None, None, None, None,
         );
 
         let x_ev: Vec<f64> = vec![1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 7.5, 10.5, 10.9, 11.0];
@@ -1057,7 +1057,8 @@ mod tests {
             52.585943252945510,
             109.16264152245950,
             117.08616453424153,
-            119.00000000000000];
+            119.00000000000000,
+        ];
         assert_eq!(y_ev, y_ev_ref);
     }
 }
