@@ -1,7 +1,7 @@
 # Changelog
 
 ## Rusty-Fitpack 0.1.2 (2023-11-18)
-[7847afb...HEAD](https://github.com/rust-lang/cargo/compare/6790a512...HEAD)
+[2a1ad8f...HEAD](https://github.com/mitric-lab/Rusty-FITPACK/compare/2a1ad8f...HEAD)
 
 ### Added
 
@@ -15,7 +15,7 @@ Fixed all warnings
 ### Internal
 
 ## Rusty-Fitpack 0.1.1 (2023-11-17)
-[6790a512...HEAD](https://github.com/mitric-lab/Rusty-FITPACK/compare/7847afb...HEAD)
+[6790a512...HEAD](https://github.com/mitric-lab/Rusty-FITPACK/compare/6790a512...HEAD)
 
 ### Added
 - Added metadata to Cargo.toml
