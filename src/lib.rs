@@ -354,7 +354,7 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu: usize) -> 
     //  before starting computations a data check is made. if the input data
     //  are invalid control is immediately repassed to the calling program.
     assert!(
-        nu >= 0 && nu <= k,
+        nu <= k,
         "The order of derivative is outside 0 - k"
     );
 
@@ -367,19 +367,18 @@ pub fn splder(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: &Vec<f64>, nu: usize) -> 
     // the b-spline coefficients wrk(i) of which can be found using the recurrence scheme
     // of de boor
     let mut l: usize = 1;
-    let mut l1: usize = l;
+    let mut l1: usize;
     let mut ll: usize;
     let mut kk: usize = k;
-    let nn: usize = n;
     // copy the b-spline coefficients
     let mut wrk: Vec<f64> = c.clone();
     let m: usize = x.len();
     let mut y: Vec<f64> = Vec::new();
-    let mut arg: f64 = 0.0;
+    let mut arg: f64;
 
     if nu != 0 {
         let mut nk2: usize = nk1;
-        for j in 0..nu {
+        for _ in 0..nu {
             let ak: f64 = kk as f64;
             nk2 -= 1;
             l1 = l;
@@ -484,7 +483,7 @@ pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu: usize) -
     //  before starting computations a data check is made. if the input data
     //  are invalid control is immediately repassed to the calling program.
     assert!(
-        nu >= 0 && nu <= k,
+        nu <= k,
         "The order of derivative is outside 0 - k"
     );
 
@@ -497,21 +496,20 @@ pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu: usize) -
     // the b-spline coefficients wrk(i) of which can be found using the recurrence scheme
     // of de boor
     let mut l: usize = 1;
-    let mut l1: usize = l;
+    let mut l1: usize;
     let mut ll: usize;
     let mut kk: usize = k;
-    let nn: usize = n;
     // copy the b-spline coefficients
     let mut wrk: Vec<f64> = c.clone();
-    let mut arg: f64 = 0.0;
+    let arg: f64;
     let mut y: f64 = 0.0;
 
     if nu != 0 {
         let mut nk2: usize = nk1;
-        for j in 0..nu {
+        for _ in 0..nu {
             let ak: f64 = kk as f64;
             nk2 -= 1;
-            let mut l1: usize = l;
+            l1 = l;
             for i in 0..nk2 {
                 l1 = l1 + 1;
                 let l2: usize = l1 + kk;
@@ -534,7 +532,6 @@ pub fn splder_uniform(t: &Vec<f64>, c: &Vec<f64>, k: usize, x: f64, nu: usize) -
         }
     }
     l = k1;
-    l1 = l + 1;
     let k2: usize = k1 - nu;
     if kk > 0 {
         // if not then we have to evaluate a spline of degree k - nu
